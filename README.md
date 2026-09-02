@@ -1,24 +1,30 @@
-<h1 align="center">📸 Application Walkthrough</h1>
-
-<!-- Section 1: Dashboards (2 Images side-by-side) -->
-<p align="center"><b>📊 App Dashboards</b></p>
-<p align="center">
-  <img src="assets/screenshots/Dashboard.png" width="=45%" alt="Dashboard Main" />
-  <img src="assets/screenshots/Dashboard_1.png" width="45%" alt="Dashboard Analytics" />
-</p>
-
-<!-- Section 2: Trades Page (1 Image given 100% full width so it doesn't shrink) -->
-<p align="center"><b>📈 Trades Management</b></p>
-<p align="center">
-  <img src="assets/screenshots/Trades.png" width="45%" alt="Trades Page" />
-</p>
-
-<!-- Section 3: Add Trades (2 Images side-by-side) -->
-<p align="center"><b>➕ Adding New Trades</b></p>
-<p align="center">
-  <img src="assets/screenshots/Add_Trade.png" width="45%" alt="Add Trade Form" />
-  <img src="assets/screenshots/Add_Trade_1.png" width="45%" alt="Add Trade Confirmation" />
-</p>
+<h1>📸 Application Walkthrough</h1>
+<table>
+  <!-- Headers Row 1 -->
+  <tr>
+    <td align="center" width="33.33%"><b>Dashboard (Main View)</b></td>
+    <td align="center" width="33.33%"><b>Dashboard (Scrolled)</b></td>
+    <td align="center" width="33.33%"><b>Trades list</b></td>
+  </tr>
+  <!-- Images Row 1 -->
+  <tr>
+    <td><img src="assets/screenshots/Dashboard.png" width="100%" alt="Dashboard Main"></td>
+    <td><img src="assets/screenshots/Dashboard_1.png" width="100%" alt="Dashboard Analytics"></td>
+    <td><img src="assets/screenshots/Trades.png" width="100%" alt="Trades Page"></td>
+  </tr>
+  <!-- Headers Row 2 -->
+  <tr>
+    <td align="center"><b>Add Trade Form</b></td>
+    <td align="center"><b>Add Trade Scrolled</b></td>
+    <td></td>
+  </tr>
+  <!-- Images Row 2 -->
+  <tr>
+    <td><img src="assets/screenshots/Add_Trade.png" width="100%" alt="Add Trade Form"></td>
+    <td><img src="assets/screenshots/Add_Trade_1.png" width="100%" alt="Add Trade Confirmation"></td>
+    <td></td>
+  </tr>
+</table>
 
 ---
 
