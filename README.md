@@ -3,21 +3,21 @@
 <!-- Section 1: Dashboards (2 Images side-by-side) -->
 <p align="center"><b>📊 App Dashboards</b></p>
 <p align="center">
-  <img src="assets/screenshots/Dashboard.png" width="48%" alt="Dashboard Main" />
-  <img src="assets/screenshots/Dashboard_1.png" width="48%" alt="Dashboard Analytics" />
+  <img src="assets/screenshots/Dashboard.png" width="=45%" alt="Dashboard Main" />
+  <img src="assets/screenshots/Dashboard_1.png" width="45%" alt="Dashboard Analytics" />
 </p>
 
 <!-- Section 2: Trades Page (1 Image given 100% full width so it doesn't shrink) -->
 <p align="center"><b>📈 Trades Management</b></p>
 <p align="center">
-  <img src="assets/screenshots/Trades.png" width="50%" alt="Trades Page" />
+  <img src="assets/screenshots/Trades.png" width="45%" alt="Trades Page" />
 </p>
 
 <!-- Section 3: Add Trades (2 Images side-by-side) -->
 <p align="center"><b>➕ Adding New Trades</b></p>
 <p align="center">
-  <img src="assets/screenshots/Add_Trade.png" width="48%" alt="Add Trade Form" />
-  <img src="assets/screenshots/Add_Trade_1.png" width="48%" alt="Add Trade Confirmation" />
+  <img src="assets/screenshots/Add_Trade.png" width="45%" alt="Add Trade Form" />
+  <img src="assets/screenshots/Add_Trade_1.png" width="45%" alt="Add Trade Confirmation" />
 </p>
 
 ---
