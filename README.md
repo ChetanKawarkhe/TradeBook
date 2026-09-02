@@ -1,18 +1,31 @@
-# Application Preview
+<h1>📸 Application Walkthrough</h1>
 
-### Dashboard Screen
-
-<img src="assets/screenshots/Dashboard.png" alt="App Dashboard Interface" width="60%">
-<img src="assets/screenshots/Dashboard_1.png" alt="App Dashboard Interface" width="60%">
-
-### Trades Screen
-
-<img src="assets/screenshots/Trades.png" alt="App Dashboard Interface" width="60%">
-
-### Add Trades Screen
-
-<img src="assets/screenshots/Add_Trade.png" alt="App Dashboard Interface" width="60%">
-<img src="assets/screenshots/Add_Trade_1.png" alt="App Dashboard Interface" width="60%">
+<table>
+  <!-- Row 1 Headers -->
+  <tr>
+    <td align="center"><b>Dashboard (Main View)</b></td>
+    <td align="center"><b>Dashboard (Scrolled)</b></td>
+    <td align="center"><b>Trades list</b></td>
+  </tr>
+  <!-- Row 1 Images -->
+  <tr>
+    <td><img src="assets/screenshots/Dashboard.png" width="100%" alt="Dashboard Main"></td>
+    <td><img src="assets/screenshots/Dashboard_1.png" width="100%" alt="Dashboard Analytics"></td>
+    <td><img src="assets/screenshots/Trades.png" width="100%" alt="Trades Page"></td>
+  </tr>
+  <!-- Row 2 Headers -->
+  <tr>
+    <td align="center"><b>Add Trade Form</b></td>
+    <td align="center"><b>Add Trade Scrolled</b></td>
+    <td align="center">─</td> <!-- Empty slot filler to keep grid aligned -->
+  </tr>
+  <!-- Row 2 Images -->
+  <tr>
+    <td><img src="assets/screenshots/Add_Trade.png" width="100%" alt="Add Trade Form"></td>
+    <td><img src="assets/screenshots/Add_Trade_1.png" width="100%" alt="Add Trade Confirmation"></td>
+    <td></td>
+  </tr>
+</table>
 
 ---
 
