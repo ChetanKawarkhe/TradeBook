@@ -2,8 +2,8 @@
 
 ### Dashboard Screen
 
-![App Dashboard Interface 1](assets/screenshots/dashboard.png)
-![App Dashboard Interface 2](assets/screenshots/dashboard_1.png)
+![App Dashboard Interface 1](assets/screenshots/Dashboard.png)
+![App Dashboard Interface 2](assets/screenshots/Dashboard_1.png)
 
 ### Trades Screen
 
