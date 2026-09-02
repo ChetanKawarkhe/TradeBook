@@ -1,3 +1,21 @@
+# Application Preview
+
+### Dashboard Screen
+
+![App Dashboard Interface 1](assets/screenshots/dashboard.png)
+![App Dashboard Interface 2](assets/screenshots/dashboard_1.png)
+
+### Trades Screen
+
+![App Dashboard Interface 1](assets/screenshots/Trades.png)
+
+### Add Trades Screen
+
+![App Dashboard Interface 1](assets/screenshots/Add_Trade.png)
+![App Dashboard Interface 1](assets/screenshots/Add_Trade_1.png)
+
+---
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
