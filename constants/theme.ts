@@ -1,53 +1,61 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+export type AppTheme = {
+  text: string;
+  background: string;
+  tint: string;
+  icon: string;
+  tabIconDefault: string;
+  tabIconSelected: string;
 
-import { Platform } from 'react-native';
+  card: string;
+  cardSecondary: string;
+  border: string;
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+  primary: string;
+  primaryDark: string;
+  primaryLight: string;
 
-export const Colors = {
+  positive: string;
+  negative: string;
+  textSecondary: string;
+};
+
+export const Colors: Record<'light' | 'dark', AppTheme> = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#18181B',
+    background: '#F8F8F7',
+    tint: '#F97316',
+    icon: '#71717A',
+    tabIconDefault: '#71717A',
+    tabIconSelected: '#F97316',
+    card: '#FFFFFF',
+    cardSecondary: '#F3F3F1',
+    border: '#E4E4E7',
+    primary: '#F97316',
+    primaryDark: '#EA580C',
+    primaryLight: '#FFF7ED',
+    positive: '#16A34A',
+    negative: '#DC2626',
+    textSecondary: '#71717A',
   },
+
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#FAFAFA',
+    background: '#0D0D0E',
+    tint: '#F97316',
+    icon: '#A1A1AA',
+    tabIconDefault: '#A1A1AA',
+    tabIconSelected: '#F97316',
+    card: '#171719',
+    cardSecondary: '#202023',
+    border: '#2A2A2E',
+    primary: '#F97316',
+    primaryDark: '#EA580C',
+    primaryLight: '#7C2D12',
+    positive: '#4ADE80',
+    negative: '#F87171',
+    textSecondary: '#A1A1AA',
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const lightTheme = Colors.light;
+export const darkTheme = Colors.dark;
