@@ -2,17 +2,17 @@
 
 ### Dashboard Screen
 
-![App Dashboard Interface 1](assets/screenshots/Dashboard.png)
-![App Dashboard Interface 2](assets/screenshots/Dashboard_1.png)
+<img src="assets/screenshots/Dashboard.png" alt="App Dashboard Interface" width="60%">
+<img src="assets/screenshots/Dashboard_1.png" alt="App Dashboard Interface" width="60%">
 
 ### Trades Screen
 
-![App Dashboard Interface 1](assets/screenshots/Trades.png)
+<img src="assets/screenshots/Trades.png" alt="App Dashboard Interface" width="60%">
 
 ### Add Trades Screen
 
-![App Dashboard Interface 1](assets/screenshots/Add_Trade.png)
-![App Dashboard Interface 1](assets/screenshots/Add_Trade_1.png)
+<img src="assets/screenshots/Add_Trade.png" alt="App Dashboard Interface" width="60%">
+<img src="assets/screenshots/Add_Trade_1.png" alt="App Dashboard Interface" width="60%">
 
 ---
 
