@@ -4,25 +4,41 @@
   <tr>
     <td align="center" width="33.33%"><b>Dashboard (Main View)</b></td>
     <td align="center" width="33.33%"><b>Dashboard (Scrolled)</b></td>
-    <td align="center" width="33.33%"><b>Trades list</b></td>
   </tr>
   <!-- Images Row 1 -->
   <tr>
-    <td><img src="assets/screenshots/Dashboard.png" width="100%" alt="Dashboard Main"></td>
+    <td><img  src="assets/screenshots/Dashboard.png" width="100%" alt="Dashboard Main"></td>
     <td><img src="assets/screenshots/Dashboard_1.png" width="100%" alt="Dashboard Analytics"></td>
-    <td><img src="assets/screenshots/Trades.png" width="100%" alt="Trades Page"></td>
   </tr>
   <!-- Headers Row 2 -->
   <tr>
-    <td align="center"><b>Add Trade Form</b></td>
-    <td align="center"><b>Add Trade Scrolled</b></td>
-    <td></td>
+    <td align="center"><b>Trades list</b></td>
+    <td align="center"><b>Trade Filters</b></td>
   </tr>
   <!-- Images Row 2 -->
   <tr>
+    <td><img src="assets/screenshots/Trades.png" width="100%" alt="Trades Page"></td>
+    <td><img src="assets/screenshots/Trades_Filters.png" width="100%" alt="Add Trade Confirmation"></td>
+  </tr>
+  <!-- Headers Row 3 -->
+  <tr>
+    <td align="center"><b>Add Trade Form</b></td>
+    <td align="center"><b>Add Trade Scrolled</b></td>
+  </tr>
+  <!-- Images Row 3 -->
+  <tr>
     <td><img src="assets/screenshots/Add_Trade.png" width="100%" alt="Add Trade Form"></td>
-    <td><img src="assets/screenshots/Add_Trade_1.png" width="100%" alt="Add Trade Confirmation"></td>
-    <td></td>
+    <td><img src="assets/screenshots/Add_Trade_1.png" width="100%" alt="Add Trade Confirmation"></td
+  </tr>
+  <!-- Headers Row 4 -->
+   <tr>
+    <td align="center"><b>Analytics</b></td>
+    <td align="center"><b>Analytics Scrolled</b></td>
+  </tr>
+  <!-- Images Row 4 -->
+  <tr>
+    <td><img src="assets/screenshots/Analytics.png" width="100%" alt="Add Trade Form"></td>
+    <td><img src="assets/screenshots/Analytics_scrolled.png" width="100%" alt="Add Trade Confirmation"></td>
   </tr>
 </table>
 
