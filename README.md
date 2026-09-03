@@ -38,7 +38,7 @@
   <!-- Images Row 4 -->
   <tr>
     <td><img src="assets/screenshots/Analytics.png" width="100%" alt="Add Trade Form"></td>
-    <td><img src="assets/screenshots/Analytics_scrolled.png" width="100%" alt="Add Trade Confirmation"></td>
+    <td><img src="assets/screenshots/Analytics_Scrolled.png" width="100%" alt="Add Trade Confirmation"></td>
   </tr>
 </table>
 
