@@ -1,6 +1,14 @@
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { LineChart } from "react-native-gifted-charts";
 
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -14,19 +22,20 @@ export default function AnalyticsScreen() {
 
   const { trades, loading } = useTrades();
 
+  const [infoType, setInfoType] = useState<
+    "profitFactor" | "expectancy" | null
+  >(null);
+
   const analytics = useMemo(() => {
-    const totalTrades = trades.length;
+    const totalPnl = trades.reduce((sum, trade) => sum + trade.pnl, 0);
 
     const wins = trades.filter((trade) => trade.pnl > 0);
     const losses = trades.filter((trade) => trade.pnl < 0);
 
-    const totalPnl = trades.reduce((sum, trade) => sum + trade.pnl, 0);
-
     const winningPnl = wins.reduce((sum, trade) => sum + trade.pnl, 0);
-
     const losingPnl = losses.reduce((sum, trade) => sum + trade.pnl, 0);
 
-    const winRate = totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0;
+    const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
 
     const averageWin = wins.length > 0 ? winningPnl / wins.length : 0;
 
@@ -39,7 +48,76 @@ export default function AnalyticsScreen() {
           ? Infinity
           : 0;
 
-    const expectancy = totalTrades > 0 ? totalPnl / totalTrades : 0;
+    const expectancy = trades.length > 0 ? totalPnl / trades.length : 0;
+
+    const followedPlan =
+      trades.length > 0
+        ? (trades.filter((trade) => trade.followedPlan).length /
+            trades.length) *
+          100
+        : 0;
+
+    const sortedTrades = [...trades].sort(
+      (a, b) =>
+        new Date(a.exitTime || a.entryTime).getTime() -
+        new Date(b.exitTime || b.entryTime).getTime(),
+    );
+
+    let cumulativePnl = 0;
+
+    const equityData = sortedTrades.map((trade, index) => {
+      cumulativePnl += trade.pnl;
+
+      return {
+        value: cumulativePnl,
+        label:
+          index === 0 || index === sortedTrades.length - 1
+            ? `T${index + 1}`
+            : "",
+        tradeNumber: index + 1,
+        pnl: trade.pnl,
+        instrument: trade.instrument,
+        date: new Date(trade.exitTime || trade.entryTime).toLocaleDateString(
+          "en-IN",
+          {
+            day: "2-digit",
+            month: "short",
+          },
+        ),
+      };
+    });
+
+    const strategyMap: Record<
+      string,
+      { pnl: number; trades: number; wins: number }
+    > = {};
+
+    trades.forEach((trade) => {
+      const strategy = trade.strategy || "No Strategy";
+
+      if (!strategyMap[strategy]) {
+        strategyMap[strategy] = {
+          pnl: 0,
+          trades: 0,
+          wins: 0,
+        };
+      }
+
+      strategyMap[strategy].pnl += trade.pnl;
+      strategyMap[strategy].trades += 1;
+
+      if (trade.pnl > 0) {
+        strategyMap[strategy].wins += 1;
+      }
+    });
+
+    const strategies = Object.entries(strategyMap)
+      .map(([name, data]) => ({
+        name,
+        ...data,
+        winRate: data.trades > 0 ? (data.wins / data.trades) * 100 : 0,
+      }))
+      .sort((a, b) => b.pnl - a.pnl);
 
     const bestTrade =
       trades.length > 0
@@ -53,78 +131,23 @@ export default function AnalyticsScreen() {
           )
         : null;
 
-    const followedPlan = trades.filter((trade) => trade.followedPlan).length;
-
-    const planRate = totalTrades > 0 ? (followedPlan / totalTrades) * 100 : 0;
-
     return {
-      totalTrades,
-      wins,
-      losses,
       totalPnl,
+      totalTrades: trades.length,
+      wins: wins.length,
+      losses: losses.length,
       winRate,
       averageWin,
       averageLoss,
       profitFactor,
       expectancy,
+      followedPlan,
+      equityData,
+      strategies,
       bestTrade,
       worstTrade,
-      followedPlan,
-      planRate,
     };
   }, [trades]);
-
-  const strategyStats = useMemo(() => {
-    const grouped: Record<string, { pnl: number; trades: number }> = {};
-
-    trades.forEach((trade) => {
-      const strategy = trade.strategy?.trim() || "No Strategy";
-
-      if (!grouped[strategy]) {
-        grouped[strategy] = {
-          pnl: 0,
-          trades: 0,
-        };
-      }
-
-      grouped[strategy].pnl += trade.pnl;
-      grouped[strategy].trades += 1;
-    });
-
-    return Object.entries(grouped)
-      .map(([strategy, stats]) => ({
-        strategy,
-        ...stats,
-      }))
-      .sort((a, b) => b.pnl - a.pnl);
-  }, [trades]);
-
-  const equityPoints = useMemo(() => {
-    const sorted = [...trades].sort(
-      (a, b) => new Date(a.exitTime).getTime() - new Date(b.exitTime).getTime(),
-    );
-
-    let runningPnl = 0;
-
-    return sorted.map((trade) => {
-      runningPnl += trade.pnl;
-
-      return {
-        id: trade.id,
-        pnl: runningPnl,
-      };
-    });
-  }, [trades]);
-
-  const equityMin = equityPoints.length
-    ? Math.min(...equityPoints.map((point) => point.pnl), 0)
-    : 0;
-
-  const equityMax = equityPoints.length
-    ? Math.max(...equityPoints.map((point) => point.pnl), 0)
-    : 0;
-
-  const equityRange = Math.max(equityMax - equityMin, 1);
 
   if (loading) {
     return (
@@ -132,105 +155,11 @@ export default function AnalyticsScreen() {
         style={{
           flex: 1,
           backgroundColor: theme.background,
-          justifyContent: "center",
           alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <Text
-          style={{
-            color: theme.textSecondary,
-            fontSize: 15,
-          }}
-        >
-          Loading analytics...
-        </Text>
-      </View>
-    );
-  }
-
-  if (trades.length === 0) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: theme.background,
-        }}
-      >
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            paddingHorizontal: 18,
-            paddingTop: 24,
-            paddingBottom: 120,
-            justifyContent: "center",
-          }}
-          showsVerticalScrollIndicator={false}
-        >
-          <View
-            style={{
-              backgroundColor: theme.card,
-              borderWidth: 1,
-              borderColor: theme.border,
-              borderRadius: 24,
-              padding: 30,
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 40,
-                marginBottom: 14,
-              }}
-            >
-              📊
-            </Text>
-
-            <Text
-              style={{
-                color: theme.text,
-                fontSize: 21,
-                fontWeight: "800",
-                textAlign: "center",
-              }}
-            >
-              Your analytics will appear here
-            </Text>
-
-            <Text
-              style={{
-                color: theme.textSecondary,
-                fontSize: 14,
-                lineHeight: 21,
-                textAlign: "center",
-                marginTop: 8,
-              }}
-            >
-              Add a few trades and TradeBook will start calculating your
-              performance automatically.
-            </Text>
-
-            <Pressable
-              onPress={() => router.push("/add")}
-              style={{
-                backgroundColor: theme.primary,
-                borderRadius: 14,
-                paddingHorizontal: 20,
-                paddingVertical: 12,
-                marginTop: 20,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontSize: 14,
-                  fontWeight: "800",
-                }}
-              >
-                Add Trade
-              </Text>
-            </Pressable>
-          </View>
-        </ScrollView>
+        <ActivityIndicator color={theme.primary} />
       </View>
     );
   }
@@ -246,8 +175,8 @@ export default function AnalyticsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 18,
-          paddingTop: 20,
-          paddingBottom: 120,
+          paddingTop: 18,
+          paddingBottom: 40,
         }}
       >
         {/* Header */}
@@ -271,282 +200,513 @@ export default function AnalyticsScreen() {
             style={{
               color: theme.textSecondary,
               fontSize: 14,
-              marginTop: 3,
+              marginTop: 4,
             }}
           >
-            Understand your trading performance
+            Understand your trading performance.
           </Text>
         </View>
 
-        {/* Performance Hero */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 22,
-            padding: 18,
-            marginBottom: 14,
-          }}
-        >
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              fontWeight: "700",
-              letterSpacing: 1,
-            }}
-          >
-            TOTAL P&L
-          </Text>
-
-          <Text
-            style={{
-              color: analytics.totalPnl >= 0 ? theme.positive : theme.negative,
-              fontSize: 31,
-              fontWeight: "800",
-              marginTop: 3,
-            }}
-          >
-            {formatCurrency(analytics.totalPnl)}
-          </Text>
-
+        {trades.length === 0 ? (
           <View
             style={{
-              flexDirection: "row",
-              marginTop: 18,
-              gap: 24,
+              backgroundColor: theme.card,
+              borderRadius: 22,
+              borderWidth: 1,
+              borderColor: theme.border,
+              padding: 28,
+              alignItems: "center",
             }}
           >
-            <MiniStat
-              label="Trades"
-              value={String(analytics.totalTrades)}
-              theme={theme}
-            />
+            <Text
+              style={{
+                color: theme.text,
+                fontSize: 18,
+                fontWeight: "700",
+                marginBottom: 8,
+              }}
+            >
+              No analytics yet
+            </Text>
 
-            <MiniStat
-              label="Win Rate"
-              value={`${analytics.winRate.toFixed(1)}%`}
-              theme={theme}
-            />
-
-            <MiniStat
-              label="Wins"
-              value={String(analytics.wins.length)}
-              valueColor={theme.positive}
-              theme={theme}
-            />
-
-            <MiniStat
-              label="Losses"
-              value={String(analytics.losses.length)}
-              valueColor={theme.negative}
-              theme={theme}
-            />
+            <Text
+              style={{
+                color: theme.textSecondary,
+                fontSize: 14,
+                textAlign: "center",
+              }}
+            >
+              Add a few trades and your performance analytics will appear here.
+            </Text>
           </View>
-        </View>
-
-        {/* Core Metrics */}
-        <SectionTitle title="Performance" theme={theme} />
-
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 10,
-            marginBottom: 14,
-          }}
-        >
-          <MetricCard
-            label="Average Win"
-            value={formatCurrency(analytics.averageWin)}
-            valueColor={theme.positive}
-            theme={theme}
-          />
-
-          <MetricCard
-            label="Average Loss"
-            value={formatCurrency(analytics.averageLoss)}
-            valueColor={theme.negative}
-            theme={theme}
-          />
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 10,
-            marginBottom: 14,
-          }}
-        >
-          <MetricCard
-            label="Profit Factor"
-            value={
-              Number.isFinite(analytics.profitFactor)
-                ? analytics.profitFactor.toFixed(2)
-                : "∞"
-            }
-            theme={theme}
-          />
-
-          <MetricCard
-            label="Expectancy / Trade"
-            value={formatCurrency(analytics.expectancy)}
-            valueColor={
-              analytics.expectancy >= 0 ? theme.positive : theme.negative
-            }
-            theme={theme}
-          />
-        </View>
-
-        {/* Equity Curve */}
-        <SectionTitle title="Equity Curve" theme={theme} />
-
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 20,
-            padding: 18,
-            marginBottom: 14,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 14,
-            }}
-          >
-            <View>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 11,
-                }}
-              >
-                Start
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 14,
-                  fontWeight: "700",
-                  marginTop: 2,
-                }}
-              >
-                ₹0
-              </Text>
-            </View>
-
+        ) : (
+          <>
+            {/* Main P&L */}
             <View
               style={{
-                alignItems: "flex-end",
+                backgroundColor: theme.card,
+                borderRadius: 22,
+                borderWidth: 1,
+                borderColor: theme.border,
+                padding: 20,
+                marginBottom: 12,
               }}
             >
               <Text
                 style={{
                   color: theme.textSecondary,
-                  fontSize: 11,
+                  fontSize: 13,
+                  fontWeight: "600",
                 }}
               >
-                Current
+                TOTAL P&L
               </Text>
 
               <Text
                 style={{
                   color:
                     analytics.totalPnl >= 0 ? theme.positive : theme.negative,
-                  fontSize: 14,
+                  fontSize: 34,
                   fontWeight: "800",
-                  marginTop: 2,
+                  marginTop: 6,
+                  letterSpacing: -1,
                 }}
               >
                 {formatCurrency(analytics.totalPnl)}
               </Text>
-            </View>
-          </View>
 
-          <View
-            style={{
-              height: 150,
-              position: "relative",
-            }}
-          >
-            {/* Zero line */}
-            {equityMin < 0 && equityMax > 0 && (
               <View
                 style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  top: ((equityMax - 0) / equityRange) * 140,
-                  borderTopWidth: 1,
-                  borderTopColor: theme.border,
+                  flexDirection: "row",
+                  marginTop: 18,
+                  gap: 20,
                 }}
-              />
-            )}
-
-            {equityPoints.length === 1 ? (
-              <EquityDot
-                point={equityPoints[0]}
-                min={equityMin}
-                range={equityRange}
-                theme={theme}
-              />
-            ) : (
-              equityPoints.map((point, index) => (
-                <EquityDot
-                  key={point.id}
-                  point={point}
-                  index={index}
-                  total={equityPoints.length}
-                  min={equityMin}
-                  range={equityRange}
+              >
+                <Metric
+                  label="Trades"
+                  value={`${analytics.totalTrades}`}
                   theme={theme}
                 />
-              ))
-            )}
-          </View>
-        </View>
 
-        {/* Strategy Performance */}
-        <SectionTitle title="Performance by Strategy" theme={theme} />
+                <Metric
+                  label="Win Rate"
+                  value={`${analytics.winRate.toFixed(1)}%`}
+                  theme={theme}
+                />
 
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 20,
-            padding: 18,
-            marginBottom: 14,
-          }}
-        >
-          {strategyStats.length === 0 ? (
-            <Text
+                <Metric
+                  label="Wins"
+                  value={`${analytics.wins}`}
+                  theme={theme}
+                />
+
+                <Metric
+                  label="Losses"
+                  value={`${analytics.losses}`}
+                  theme={theme}
+                />
+              </View>
+            </View>
+
+            {/* Equity Curve */}
+            <View
               style={{
-                color: theme.textSecondary,
-                fontSize: 13,
+                backgroundColor: theme.card,
+                borderRadius: 22,
+                borderWidth: 1,
+                borderColor: theme.border,
+                paddingTop: 20,
+                paddingBottom: 18,
+                marginBottom: 12,
+                overflow: "hidden",
               }}
             >
-              No strategy data available.
-            </Text>
-          ) : (
-            strategyStats.map((item, index) => {
-              const maxAbsPnl = Math.max(
-                ...strategyStats.map((strategy) => Math.abs(strategy.pnl)),
-                1,
-              );
-
-              const width = (Math.abs(item.pnl) / maxAbsPnl) * 100;
-
-              return (
-                <View
-                  key={item.strategy}
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                  marginBottom: 12,
+                }}
+              >
+                <Text
                   style={{
-                    marginBottom: index === strategyStats.length - 1 ? 0 : 18,
+                    color: theme.text,
+                    fontSize: 18,
+                    fontWeight: "700",
+                  }}
+                >
+                  Equity Curve
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 13,
+                    marginTop: 3,
+                  }}
+                >
+                  Cumulative P&L across your trades
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  paddingLeft: 8,
+                  paddingRight: 8,
+                }}
+              >
+                <LineChart
+                  data={analytics.equityData}
+                  height={220}
+                  width={300}
+                  spacing={
+                    analytics.equityData.length <= 1
+                      ? 0
+                      : Math.max(
+                          38,
+                          Math.min(
+                            62,
+                            280 / Math.max(analytics.equityData.length - 1, 1),
+                          ),
+                        )
+                  }
+                  initialSpacing={18}
+                  endSpacing={18}
+                  thickness={3}
+                  color={theme.primary}
+                  dataPointsColor={theme.primary}
+                  dataPointsRadius={4}
+                  curved
+                  curvature={0.2}
+                  hideRules={false}
+                  rulesColor={theme.border}
+                  rulesType="dashed"
+                  hideYAxisText={false}
+                  yAxisColor={theme.border}
+                  yAxisThickness={1}
+                  xAxisColor={theme.border}
+                  xAxisThickness={1}
+                  noOfSections={4}
+                  isAnimated={false}
+                  areaChart
+                  startFillColor={theme.primary}
+                  endFillColor={theme.primary}
+                  startOpacity={0.16}
+                  endOpacity={0.01}
+                  yAxisTextStyle={{
+                    color: theme.textSecondary,
+                    fontSize: 10,
+                  }}
+                  xAxisLabelTextStyle={{
+                    color: theme.textSecondary,
+                    fontSize: 10,
+                  }}
+                  focusEnabled
+                  showDataPointOnFocus
+                  showStripOnFocus
+                  stripColor={theme.primary}
+                  stripWidth={1}
+                  stripOpacity={0.4}
+                  focusedDataPointColor={theme.primary}
+                  focusedDataPointRadius={6}
+                  unFocusOnPressOut={false}
+                  delayBeforeUnFocus={60000}
+                  pointerConfig={{
+                    pointerStripHeight: 195,
+                    pointerStripColor: theme.primary,
+                    pointerStripWidth: 1,
+                    pointerColor: theme.primary,
+                    radius: 5,
+
+                    activatePointersInstantlyOnTouch: true,
+
+                    autoAdjustPointerLabelPosition: true,
+
+                    pointerLabelWidth: 145,
+                    pointerLabelHeight: 78,
+
+                    pointerLabelComponent: (
+                      items: any[],
+                      _secondaryDataItem: any,
+                      pointerIndex: number,
+                    ) => {
+                      const item = items?.[0];
+
+                      if (!item) {
+                        return null;
+                      }
+
+                      const originalTrade = analytics.equityData[pointerIndex];
+
+                      return (
+                        <View
+                          style={{
+                            width: 145,
+                            backgroundColor: theme.card,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: theme.border,
+                            paddingHorizontal: 10,
+                            paddingVertical: 9,
+
+                            shadowColor: "#000",
+                            shadowOpacity: 0.15,
+                            shadowRadius: 8,
+                            shadowOffset: {
+                              width: 0,
+                              height: 3,
+                            },
+                            elevation: 5,
+                          }}
+                        >
+                          <Text
+                            numberOfLines={1}
+                            style={{
+                              color: theme.textSecondary,
+                              fontSize: 10,
+                              fontWeight: "700",
+                            }}
+                          >
+                            Trade {pointerIndex + 1}
+                            {originalTrade?.instrument
+                              ? ` · ${originalTrade.instrument}`
+                              : ""}
+                          </Text>
+
+                          <Text
+                            style={{
+                              color:
+                                item.value >= 0
+                                  ? theme.positive
+                                  : theme.negative,
+                              fontSize: 16,
+                              fontWeight: "800",
+                              marginTop: 2,
+                            }}
+                          >
+                            {formatCurrency(item.value)}
+                          </Text>
+
+                          <Text
+                            style={{
+                              color: theme.textSecondary,
+                              fontSize: 9,
+                            }}
+                          >
+                            Cumulative P&L
+                          </Text>
+
+                          {originalTrade && (
+                            <Text
+                              style={{
+                                color:
+                                  originalTrade.pnl >= 0
+                                    ? theme.positive
+                                    : theme.negative,
+                                fontSize: 10,
+                                fontWeight: "700",
+                                marginTop: 3,
+                              }}
+                            >
+                              Trade: {formatCurrency(originalTrade.pnl)}
+                            </Text>
+                          )}
+                        </View>
+                      );
+                    },
+                  }}
+                />
+              </View>
+
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                  marginTop: 2,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 12,
+                  }}
+                >
+                  Tap / drag the chart
+                </Text>
+
+                <Text
+                  style={{
+                    color:
+                      analytics.totalPnl >= 0 ? theme.positive : theme.negative,
+                    fontSize: 12,
+                    fontWeight: "700",
+                  }}
+                >
+                  {formatCurrency(analytics.totalPnl)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Average Win / Loss */}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <StatCard
+                title="Average Win"
+                value={formatCurrency(analytics.averageWin)}
+                positive
+                theme={theme}
+              />
+
+              <StatCard
+                title="Average Loss"
+                value={formatCurrency(analytics.averageLoss)}
+                positive={false}
+                theme={theme}
+              />
+            </View>
+
+            {/* Profit Factor + Expectancy */}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <InfoStatCard
+                title="Profit Factor"
+                value={
+                  Number.isFinite(analytics.profitFactor)
+                    ? analytics.profitFactor.toFixed(2)
+                    : "∞"
+                }
+                onInfo={() => setInfoType("profitFactor")}
+                theme={theme}
+              />
+
+              <InfoStatCard
+                title="Expectancy / Trade"
+                value={formatCurrency(analytics.expectancy)}
+                onInfo={() => setInfoType("expectancy")}
+                theme={theme}
+              />
+            </View>
+
+            {/* Plan Followed */}
+            <View
+              style={{
+                backgroundColor: theme.card,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: theme.border,
+                padding: 18,
+                marginBottom: 12,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View>
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontSize: 16,
+                      fontWeight: "700",
+                    }}
+                  >
+                    Plan Discipline
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: theme.textSecondary,
+                      fontSize: 12,
+                      marginTop: 3,
+                    }}
+                  >
+                    Trades where you followed your plan
+                  </Text>
+                </View>
+
+                <Text
+                  style={{
+                    color: theme.primary,
+                    fontSize: 20,
+                    fontWeight: "800",
+                  }}
+                >
+                  {analytics.followedPlan.toFixed(0)}%
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  height: 8,
+                  borderRadius: 8,
+                  backgroundColor: theme.cardSecondary,
+                  overflow: "hidden",
+                  marginTop: 14,
+                }}
+              >
+                <View
+                  style={{
+                    height: "100%",
+                    width: `${Math.min(100, analytics.followedPlan)}%`,
+                    backgroundColor: theme.primary,
+                    borderRadius: 8,
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Strategies */}
+            <View
+              style={{
+                backgroundColor: theme.card,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: theme.border,
+                padding: 18,
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 18,
+                  fontWeight: "700",
+                }}
+              >
+                Strategy Performance
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 13,
+                  marginTop: 3,
+                  marginBottom: 16,
+                }}
+              >
+                Which setups are actually making money?
+              </Text>
+
+              {analytics.strategies.map((strategy) => (
+                <View
+                  key={strategy.name}
+                  style={{
+                    paddingVertical: 12,
+                    borderTopWidth: 1,
+                    borderTopColor: theme.border,
                   }}
                 >
                   <View
@@ -554,290 +714,300 @@ export default function AnalyticsScreen() {
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginBottom: 7,
                     }}
                   >
-                    <View
-                      style={{
-                        flex: 1,
-                        paddingRight: 10,
-                      }}
-                    >
+                    <View style={{ flex: 1 }}>
                       <Text
                         style={{
                           color: theme.text,
                           fontSize: 14,
                           fontWeight: "700",
                         }}
-                        numberOfLines={1}
                       >
-                        {item.strategy}
+                        {strategy.name}
                       </Text>
 
                       <Text
                         style={{
                           color: theme.textSecondary,
-                          fontSize: 11,
-                          marginTop: 2,
+                          fontSize: 12,
+                          marginTop: 3,
                         }}
                       >
-                        {item.trades} {item.trades === 1 ? "trade" : "trades"}
+                        {strategy.trades} trades · {strategy.winRate.toFixed(0)}
+                        % win rate
                       </Text>
                     </View>
 
                     <Text
                       style={{
-                        color: item.pnl >= 0 ? theme.positive : theme.negative,
-                        fontSize: 14,
+                        color:
+                          strategy.pnl >= 0 ? theme.positive : theme.negative,
+                        fontSize: 15,
                         fontWeight: "800",
                       }}
                     >
-                      {formatCurrency(item.pnl)}
+                      {formatCurrency(strategy.pnl)}
                     </Text>
                   </View>
-
-                  <View
-                    style={{
-                      height: 7,
-                      borderRadius: 4,
-                      backgroundColor: theme.cardSecondary,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <View
-                      style={{
-                        height: "100%",
-                        width: `${Math.max(width, 2)}%`,
-                        backgroundColor:
-                          item.pnl >= 0 ? theme.positive : theme.negative,
-                        borderRadius: 4,
-                      }}
-                    />
-                  </View>
                 </View>
-              );
-            })
-          )}
-        </View>
+              ))}
+            </View>
 
-        {/* Trading Behavior */}
-        <SectionTitle title="Trading Behavior" theme={theme} />
+            {/* Best / Worst */}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 12,
+              }}
+            >
+              <TradeHighlight
+                title="Best Trade"
+                trade={analytics.bestTrade}
+                positive
+                theme={theme}
+                onPress={() => {
+                  if (!analytics.bestTrade) return;
 
-        <View
+                  router.push({
+                    pathname: "/trade/[id]",
+                    params: { id: analytics.bestTrade.id },
+                  });
+                }}
+              />
+
+              <TradeHighlight
+                title="Worst Trade"
+                trade={analytics.worstTrade}
+                positive={false}
+                theme={theme}
+                onPress={() => {
+                  if (!analytics.worstTrade) return;
+
+                  router.push({
+                    pathname: "/trade/[id]",
+                    params: { id: analytics.worstTrade.id },
+                  });
+                }}
+              />
+            </View>
+          </>
+        )}
+      </ScrollView>
+
+      {/* Info Modal */}
+      <Modal
+        visible={infoType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoType(null)}
+      >
+        <Pressable
+          onPress={() => setInfoType(null)}
           style={{
-            backgroundColor: theme.card,
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 20,
-            padding: 18,
-            marginBottom: 14,
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.55)",
+            justifyContent: "center",
+            padding: 24,
           }}
         >
-          <View
+          <Pressable
+            onPress={(event) => event.stopPropagation()}
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 12,
+              backgroundColor: theme.card,
+              borderRadius: 24,
+              padding: 22,
+              borderWidth: 1,
+              borderColor: theme.border,
             }}
           >
-            <View>
+            {infoType === "profitFactor" ? (
+              <>
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 20,
+                    fontWeight: "800",
+                  }}
+                >
+                  Profit Factor
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 14,
+                    lineHeight: 21,
+                    marginTop: 12,
+                  }}
+                >
+                  Profit Factor compares the money you made on winning trades
+                  with the money you lost on losing trades.
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 15,
+                    fontWeight: "700",
+                    marginTop: 16,
+                  }}
+                >
+                  Formula
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.primary,
+                    fontSize: 15,
+                    marginTop: 5,
+                  }}
+                >
+                  Total Winning P&L ÷ Absolute Total Losing P&L
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 14,
+                    lineHeight: 21,
+                    marginTop: 14,
+                  }}
+                >
+                  Above 1 = profitable{"\n"}1 = break-even{"\n"}
+                  Below 1 = losing
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 20,
+                    fontWeight: "800",
+                  }}
+                >
+                  Expectancy / Trade
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 14,
+                    lineHeight: 21,
+                    marginTop: 12,
+                  }}
+                >
+                  Expectancy tells you the average amount you historically made
+                  or lost per trade.
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 15,
+                    fontWeight: "700",
+                    marginTop: 16,
+                  }}
+                >
+                  Formula
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.primary,
+                    fontSize: 15,
+                    marginTop: 5,
+                  }}
+                >
+                  Total P&L ÷ Number of Trades
+                </Text>
+
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 14,
+                    lineHeight: 21,
+                    marginTop: 14,
+                  }}
+                >
+                  Positive = positive average edge{"\n"}
+                  Zero = break-even average{"\n"}
+                  Negative = negative average edge
+                </Text>
+              </>
+            )}
+
+            <Pressable
+              onPress={() => setInfoType(null)}
+              style={{
+                marginTop: 22,
+                backgroundColor: theme.primary,
+                borderRadius: 14,
+                paddingVertical: 13,
+                alignItems: "center",
+              }}
+            >
               <Text
                 style={{
-                  color: theme.text,
-                  fontSize: 15,
+                  color: "#FFFFFF",
+                  fontSize: 14,
                   fontWeight: "700",
                 }}
               >
-                Plan followed
+                Got it
               </Text>
-
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                  marginTop: 3,
-                }}
-              >
-                {analytics.followedPlan} of {analytics.totalTrades} trades
-              </Text>
-            </View>
-
-            <Text
-              style={{
-                color:
-                  analytics.planRate >= 70
-                    ? theme.positive
-                    : analytics.planRate >= 50
-                      ? theme.primary
-                      : theme.negative,
-                fontSize: 19,
-                fontWeight: "800",
-              }}
-            >
-              {analytics.planRate.toFixed(0)}%
-            </Text>
-          </View>
-
-          <View
-            style={{
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: theme.cardSecondary,
-              overflow: "hidden",
-            }}
-          >
-            <View
-              style={{
-                height: "100%",
-                width: `${analytics.planRate}%`,
-                backgroundColor: theme.primary,
-                borderRadius: 4,
-              }}
-            />
-          </View>
-        </View>
-
-        {/* Best / Worst */}
-        <SectionTitle title="Trade Highlights" theme={theme} />
-
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 10,
-            marginBottom: 14,
-          }}
-        >
-          <HighlightCard
-            label="Best Trade"
-            trade={analytics.bestTrade}
-            positive
-            theme={theme}
-            onPress={
-              analytics.bestTrade
-                ? () => {
-                    router.push({
-                      pathname: "/trade/[id]",
-                      params: {
-                        id: analytics.bestTrade!.id,
-                      },
-                    });
-                  }
-                : undefined
-            }
-          />
-
-          <HighlightCard
-            label="Worst Trade"
-            trade={analytics.worstTrade}
-            positive={false}
-            theme={theme}
-            onPress={
-              analytics.worstTrade
-                ? () => {
-                    router.push({
-                      pathname: "/trade/[id]",
-                      params: {
-                        id: analytics.worstTrade!.id,
-                      },
-                    });
-                  }
-                : undefined
-            }
-          />
-        </View>
-
-        {/* Footer note */}
-        <View
-          style={{
-            paddingHorizontal: 4,
-            paddingTop: 4,
-          }}
-        >
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              lineHeight: 17,
-              textAlign: "center",
-            }}
-          >
-            Analytics are calculated from your saved trades. More behavioral
-            insights will be added as your journal grows.
-          </Text>
-        </View>
-      </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
-function SectionTitle({
-  title,
-  theme,
-}: {
-  title: string;
-  theme: typeof Colors.light;
-}) {
-  return (
-    <Text
-      style={{
-        color: theme.text,
-        fontSize: 17,
-        fontWeight: "800",
-        marginBottom: 10,
-        marginLeft: 2,
-      }}
-    >
-      {title}
-    </Text>
-  );
-}
-
-function MiniStat({
+function Metric({
   label,
   value,
-  valueColor,
   theme,
 }: {
   label: string;
   value: string;
-  valueColor?: string;
   theme: typeof Colors.light;
 }) {
   return (
     <View>
       <Text
         style={{
-          color: theme.textSecondary,
-          fontSize: 11,
+          color: theme.text,
+          fontSize: 16,
+          fontWeight: "700",
         }}
       >
-        {label}
+        {value}
       </Text>
 
       <Text
         style={{
-          color: valueColor ?? theme.text,
-          fontSize: 15,
-          fontWeight: "800",
-          marginTop: 3,
+          color: theme.textSecondary,
+          fontSize: 11,
+          marginTop: 2,
         }}
       >
-        {value}
+        {label}
       </Text>
     </View>
   );
 }
 
-function MetricCard({
-  label,
+function StatCard({
+  title,
   value,
-  valueColor,
+  positive,
   theme,
 }: {
-  label: string;
+  title: string;
   value: string;
-  valueColor?: string;
+  positive: boolean;
   theme: typeof Colors.light;
 }) {
   return (
@@ -845,25 +1015,26 @@ function MetricCard({
       style={{
         flex: 1,
         backgroundColor: theme.card,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: theme.border,
-        borderRadius: 17,
-        padding: 15,
+        padding: 18,
       }}
     >
       <Text
         style={{
           color: theme.textSecondary,
-          fontSize: 11,
+          fontSize: 12,
+          fontWeight: "600",
         }}
       >
-        {label}
+        {title}
       </Text>
 
       <Text
         style={{
-          color: valueColor ?? theme.text,
-          fontSize: 17,
+          color: positive ? theme.positive : theme.negative,
+          fontSize: 20,
           fontWeight: "800",
           marginTop: 6,
         }}
@@ -874,51 +1045,92 @@ function MetricCard({
   );
 }
 
-function EquityDot({
-  point,
-  index = 0,
-  total = 1,
-  min,
-  range,
+function InfoStatCard({
+  title,
+  value,
+  onInfo,
   theme,
 }: {
-  point: {
-    id: string;
-    pnl: number;
-  };
-  index?: number;
-  total?: number;
-  min: number;
-  range: number;
+  title: string;
+  value: string;
+  onInfo: () => void;
   theme: typeof Colors.light;
 }) {
-  const left = total <= 1 ? 50 : (index / (total - 1)) * 96 + 2;
-
-  const top = (Math.max(0, Math.min(range, point.pnl - min)) / range) * 140;
-
   return (
     <View
       style={{
-        position: "absolute",
-        left: `${left}%`,
-        top: 140 - top,
-        width: 7,
-        height: 7,
-        borderRadius: 4,
-        backgroundColor: point.pnl >= 0 ? theme.positive : theme.negative,
+        flex: 1,
+        backgroundColor: theme.card,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: theme.border,
+        padding: 18,
       }}
-    />
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 7,
+        }}
+      >
+        <Text
+          style={{
+            color: theme.textSecondary,
+            fontSize: 12,
+            fontWeight: "600",
+          }}
+        >
+          {title}
+        </Text>
+
+        <Pressable
+          onPress={onInfo}
+          hitSlop={8}
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: 9,
+            borderWidth: 1,
+            borderColor: theme.textSecondary,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              fontWeight: "800",
+            }}
+          >
+            i
+          </Text>
+        </Pressable>
+      </View>
+
+      <Text
+        style={{
+          color: theme.text,
+          fontSize: 22,
+          fontWeight: "800",
+          marginTop: 6,
+        }}
+      >
+        {value}
+      </Text>
+    </View>
   );
 }
 
-function HighlightCard({
-  label,
+function TradeHighlight({
+  title,
   trade,
   positive,
   theme,
   onPress,
 }: {
-  label: string;
+  title: string;
   trade: {
     id: string;
     instrument: string;
@@ -926,27 +1138,29 @@ function HighlightCard({
   } | null;
   positive: boolean;
   theme: typeof Colors.light;
-  onPress?: () => void;
+  onPress: () => void;
 }) {
-  const content = (
-    <View
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!trade}
       style={{
         flex: 1,
         backgroundColor: theme.card,
+        borderRadius: 20,
         borderWidth: 1,
         borderColor: theme.border,
-        borderRadius: 18,
-        padding: 16,
+        padding: 18,
       }}
     >
       <Text
         style={{
           color: theme.textSecondary,
-          fontSize: 11,
-          fontWeight: "700",
+          fontSize: 12,
+          fontWeight: "600",
         }}
       >
-        {label}
+        {title}
       </Text>
 
       {trade ? (
@@ -955,10 +1169,9 @@ function HighlightCard({
             style={{
               color: theme.text,
               fontSize: 15,
-              fontWeight: "800",
+              fontWeight: "700",
               marginTop: 8,
             }}
-            numberOfLines={1}
           >
             {trade.instrument}
           </Text>
@@ -966,9 +1179,9 @@ function HighlightCard({
           <Text
             style={{
               color: positive ? theme.positive : theme.negative,
-              fontSize: 18,
+              fontSize: 19,
               fontWeight: "800",
-              marginTop: 4,
+              marginTop: 3,
             }}
           >
             {formatCurrency(trade.pnl)}
@@ -978,28 +1191,13 @@ function HighlightCard({
         <Text
           style={{
             color: theme.textSecondary,
-            fontSize: 13,
+            fontSize: 14,
             marginTop: 8,
           }}
         >
-          No data
+          —
         </Text>
       )}
-    </View>
-  );
-
-  if (!onPress) {
-    return content;
-  }
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        flex: 1,
-      }}
-    >
-      {content}
     </Pressable>
   );
 }
