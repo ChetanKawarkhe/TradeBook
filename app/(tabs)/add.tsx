@@ -68,13 +68,16 @@ function SectionTitle({
   title: string;
   subtitle?: string;
 }) {
+  const scheme = useColorScheme();
+  const theme = Colors[scheme ?? "light"];
+
   return (
     <View style={{ marginBottom: 10 }}>
       <Text
         style={{
           fontSize: 15,
           fontWeight: "700",
-          color: "inherit",
+          color: theme.text,
         }}
       >
         {title}
@@ -85,8 +88,7 @@ function SectionTitle({
           style={{
             marginTop: 3,
             fontSize: 12,
-            color: "inherit",
-            opacity: 0.6,
+            color: theme.textSecondary,
           }}
         >
           {subtitle}
@@ -404,10 +406,8 @@ export default function AddTradeScreen() {
 
       resetForm();
 
-      Alert.alert(
-        "Trade saved",
-        `${trade.instrument} ${trade.direction} recorded successfully.`,
-      );
+      // Go directly to Trades after saving
+      router.replace("/(tabs)/trades");
     } catch (error) {
       console.error(error);
       Alert.alert(

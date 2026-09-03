@@ -1,5 +1,3 @@
-# Mindset, Discipline, setup title and it's title note are black but in dark mode still showing dark. and on save it doesn't take to trades list instead it keep in add tab at bottom/where left.
-
 <h1>📸 Application Walkthrough</h1>
 <table>
   <!-- Headers Row 1 -->
