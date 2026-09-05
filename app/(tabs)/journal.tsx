@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -120,10 +120,14 @@ function Chip({
 export default function JournalScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme ?? "light"];
+  const { editId } = useLocalSearchParams<{
+    editId?: string;
+  }>();
 
   const { entries, addEntry, deleteEntry, updateEntry, loading } = useJournal();
 
   const [editing, setEditing] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
 
   const [mood, setMood] = useState("");
   const [marketBias, setMarketBias] = useState("");
@@ -138,17 +142,9 @@ export default function JournalScreen() {
 
   const todayEntry = entries.find((entry) => entry.date === today);
 
-  function startNewEntry() {
-    setMood(todayEntry?.mood ?? "");
-    setMarketBias(todayEntry?.marketBias ?? "");
-    setPlan(todayEntry?.plan ?? "");
-    setWhatWentWell(todayEntry?.whatWentWell ?? "");
-    setWhatWentWrong(todayEntry?.whatWentWrong ?? "");
-    setLesson(todayEntry?.lesson ?? "");
-    setNotes(todayEntry?.notes ?? "");
-    setEditing(true);
-  }
   function startEditing(entry: JournalEntry) {
+    setEditingEntryId(entry.id);
+
     setMood(entry.mood ?? "");
     setMarketBias(entry.marketBias ?? "");
     setPlan(entry.plan);
@@ -159,6 +155,43 @@ export default function JournalScreen() {
 
     setEditing(true);
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setEditing(false);
+        setEditingEntryId(null);
+      };
+    }, []),
+  );
+  useEffect(() => {
+    if (!editId || loading) {
+      return;
+    }
+
+    const entry = entries.find((item) => item.id === editId);
+
+    if (!entry) {
+      return;
+    }
+
+    startEditing(entry);
+  }, [editId, loading, entries]);
+
+  function startNewEntry() {
+    setEditingEntryId(todayEntry?.id ?? null);
+
+    setMood(todayEntry?.mood ?? "");
+    setMarketBias(todayEntry?.marketBias ?? "");
+    setPlan(todayEntry?.plan ?? "");
+    setWhatWentWell(todayEntry?.whatWentWell ?? "");
+    setWhatWentWrong(todayEntry?.whatWentWrong ?? "");
+    setLesson(todayEntry?.lesson ?? "");
+    setNotes(todayEntry?.notes ?? "");
+
+    setEditing(true);
+  }
+
   async function saveEntry() {
     if (!plan.trim() && !lesson.trim()) {
       Alert.alert("Add something first", "Write your trading plan or lesson.");
@@ -167,11 +200,17 @@ export default function JournalScreen() {
 
     const now = new Date().toISOString();
 
+    const existingEntry = editingEntryId
+      ? entries.find((entry) => entry.id === editingEntryId)
+      : undefined;
+
     const entry: JournalEntry = {
       id:
-        todayEntry?.id ??
+        existingEntry?.id ??
         `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      date: today,
+
+      date: existingEntry?.date ?? today,
+
       mood: mood || undefined,
       marketBias: marketBias || undefined,
       plan: plan.trim(),
@@ -179,17 +218,19 @@ export default function JournalScreen() {
       whatWentWrong: whatWentWrong.trim(),
       lesson: lesson.trim(),
       notes: notes.trim(),
-      createdAt: todayEntry?.createdAt ?? now,
+
+      createdAt: existingEntry?.createdAt ?? now,
       updatedAt: now,
     };
 
-    if (todayEntry) {
+    if (existingEntry) {
       await updateEntry(entry);
     } else {
       await addEntry(entry);
     }
 
     setEditing(false);
+    setEditingEntryId(null);
   }
 
   function removeEntry(id: string) {
@@ -423,15 +464,36 @@ export default function JournalScreen() {
             <View
               style={{
                 flexDirection: "row",
+                alignItems: "center",
                 gap: 10,
+                marginTop: 4,
               }}
             >
               <Pressable
                 onPress={() => {
                   setEditing(false);
+                  setEditingEntryId(null);
+                }}
+                style={{
+                  height: 50,
+                  paddingHorizontal: 18,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  backgroundColor: theme.cardSecondary,
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                <Text>Cancel</Text>
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 13,
+                    fontWeight: "800",
+                  }}
+                >
+                  Cancel
+                </Text>
               </Pressable>
 
               <Pressable
@@ -448,6 +510,7 @@ export default function JournalScreen() {
                 <Text
                   style={{
                     color: "#FFFFFF",
+                    fontSize: 13,
                     fontWeight: "800",
                   }}
                 >
@@ -650,8 +713,14 @@ export default function JournalScreen() {
           </Text>
         ) : (
           entries.slice(0, 8).map((entry) => (
-            <View
+            <Pressable
               key={entry.id}
+              onPress={() =>
+                router.push({
+                  pathname: "/journal/[id]",
+                  params: { id: entry.id },
+                })
+              }
               style={{
                 paddingVertical: 13,
                 borderBottomWidth: 1,
@@ -720,7 +789,7 @@ export default function JournalScreen() {
                   {entry.lesson}
                 </Text>
               ) : null}
-            </View>
+            </Pressable>
           ))
         )}
       </View>

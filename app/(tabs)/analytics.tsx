@@ -9,6 +9,8 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTrades } from "@/store/TradeProvider";
 import type { Trade } from "@/types/trade";
 import { formatCurrency } from "@/utils/trade";
+import { calculateTraderScore } from "@/utils/traderScore";
+import { generateTradingInsights } from "@/utils/tradingInsights";
 
 type MetricCardProps = {
   label: string;
@@ -283,6 +285,11 @@ export default function AnalyticsScreen() {
   const theme = Colors[scheme ?? "light"];
 
   const { trades, loading } = useTrades();
+  const traderScore = useMemo(() => calculateTraderScore(trades), [trades]);
+  const tradingInsights = useMemo(
+    () => generateTradingInsights(trades),
+    [trades],
+  );
 
   const [infoType, setInfoType] = useState<
     "profitFactor" | "expectancy" | "drawdown" | null
@@ -681,7 +688,253 @@ export default function AnalyticsScreen() {
             Understand your edge. Improve your execution.
           </Text>
         </View>
+        {/* Trader Score */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            borderWidth: 1,
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <View>
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 12,
+                  fontWeight: "700",
+                }}
+              >
+                TRADER SCORE
+              </Text>
 
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 28,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {traderScore.overall}
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  /100
+                </Text>
+              </Text>
+            </View>
+
+            <View
+              style={{
+                width: 58,
+                height: 58,
+                borderRadius: 29,
+                backgroundColor: theme.primaryLight,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.primary,
+                  fontSize: 20,
+                  fontWeight: "800",
+                }}
+              >
+                {traderScore.overall >= 80
+                  ? "A"
+                  : traderScore.overall >= 65
+                    ? "B"
+                    : traderScore.overall >= 50
+                      ? "C"
+                      : "D"}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 18,
+              gap: 8,
+            }}
+          >
+            {[
+              {
+                label: "Plan",
+                value: traderScore.planAdherence,
+              },
+              {
+                label: "Performance",
+                value: traderScore.performance,
+              },
+              {
+                label: "Consistency",
+                value: traderScore.consistency,
+              },
+              {
+                label: "Journal",
+                value: traderScore.journaling,
+              },
+            ].map((item) => (
+              <View
+                key={item.label}
+                style={{
+                  flex: 1,
+                  backgroundColor: theme.cardSecondary,
+                  borderRadius: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 6,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 14,
+                    fontWeight: "800",
+                  }}
+                >
+                  {item.value}
+                </Text>
+
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 8,
+                    fontWeight: "700",
+                    marginTop: 3,
+                  }}
+                >
+                  {item.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              lineHeight: 16,
+              marginTop: 14,
+            }}
+          >
+            {traderScore.overall >= 80
+              ? "Excellent trading discipline. Keep protecting the process."
+              : traderScore.overall >= 65
+                ? "Good progress. Focus on consistency and following your plan."
+                : traderScore.overall >= 50
+                  ? "Your process has room to improve. Focus on discipline before increasing risk."
+                  : "Build stronger trading habits. Follow your plan and document every trade."}
+          </Text>
+        </View>
+
+        {/* Trading Insights */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            borderWidth: 1,
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.text,
+              fontSize: 16,
+              fontWeight: "800",
+            }}
+          >
+            Trading Insights
+          </Text>
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              marginTop: 3,
+              marginBottom: 14,
+            }}
+          >
+            Patterns found in your trading data
+          </Text>
+
+          {tradingInsights.map((insight, index) => (
+            <View
+              key={`${insight.title}-${index}`}
+              style={{
+                paddingVertical: 12,
+                borderTopWidth: index === 0 ? 0 : 1,
+                borderTopColor: theme.border,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor:
+                      insight.type === "positive"
+                        ? theme.positive
+                        : insight.type === "warning"
+                          ? theme.negative
+                          : theme.primary,
+                    marginRight: 9,
+                  }}
+                />
+
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 13,
+                    fontWeight: "800",
+                    flex: 1,
+                  }}
+                >
+                  {insight.title}
+                </Text>
+              </View>
+
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 11,
+                  lineHeight: 16,
+                  marginTop: 5,
+                  marginLeft: 17,
+                }}
+              >
+                {insight.message}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Top metrics */}
         {/* Top metrics */}
         <View
           style={{
@@ -773,121 +1026,6 @@ export default function AnalyticsScreen() {
               value={formatCurrency(analytics.worstTrade)}
               negative
             />
-          </View>
-        </View>
-
-        {/* Trader Score */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 20,
-            borderWidth: 1,
-            borderColor: theme.border,
-            padding: 18,
-            marginBottom: 14,
-          }}
-        >
-          <SectionHeader
-            title="Trader Score"
-            subtitle="A combined view of performance and discipline."
-          />
-
-          <ScoreRing
-            score={analytics.traderScore}
-            label={
-              analytics.traderScore >= 75
-                ? "Strong"
-                : analytics.traderScore >= 50
-                  ? "Developing"
-                  : "Needs Work"
-            }
-          />
-
-          <View
-            style={{
-              marginTop: 20,
-              gap: 12,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Plan adherence
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 12,
-                  fontWeight: "700",
-                }}
-              >
-                {analytics.planRate.toFixed(0)}%
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Discipline
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 12,
-                  fontWeight: "700",
-                }}
-              >
-                {analytics.disciplineRate.toFixed(0)}%
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Emotional control
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 12,
-                  fontWeight: "700",
-                }}
-              >
-                {analytics.averageStress > 0
-                  ? `${analytics.averageStress.toFixed(1)} / 5 stress`
-                  : "No data"}
-              </Text>
-            </View>
           </View>
         </View>
 

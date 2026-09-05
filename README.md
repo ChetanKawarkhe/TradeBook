@@ -94,3 +94,54 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+---
+
+### 🟠 Core UI / Features
+
+1. **P&L Calendar enhancement** — show the actual **₹ P&L on each day**.
+2. **Journal → Detail → Edit** — currently working flow, just needs final polish/testing.
+3. **Playbook enhancement** — edit rules + active/inactive toggle.
+4. **Trade screenshots / attachments**.
+5. **Voice notes** for trades/journal.
+6. **Trade Replay** / trade review experience.
+
+### 📊 Advanced Analytics
+
+7. **Trader Score**.
+8. **Trade Quality Score**.
+9. **Behavior & emotion analytics**.
+10. **Mistake Library** — recurring mistakes.
+11. **Good Win / Bad Win / Good Loss / Bad Loss analytics**.
+12. **Drawdown & risk analytics**.
+13. **Time/session analysis**.
+14. **What-If analysis**.
+
+### 🧠 Free “AI-like” Intelligence
+
+15. **Local Trading Insights Engine** — no API required.
+16. **Automatic behavioral pattern detection**.
+17. **Personalized trading lessons**.
+18. **AI-style Trading Review dashboard**.
+19. Later: **optional real LLM/AI Coach** when budget allows.
+
+### ⚙️ Product / Infrastructure
+
+20. **Settings / profile**.
+21. **Data export/import / backup**.
+22. **Cloud sync** later.
+23. **Google authentication** later.
+24. **SQLite migration** when the dataset grows.
+25. **Final UI polish + animations + empty/loading/error states**.
+26. **Testing + production build / Play Store preparation**.
+
+### 🎯 Immediate order
+
+**1 → P&L Calendar**
+**2 → Trader Score**
+**3 → Local Intelligence / Insights**
+**4 → Behavior Analytics**
+**5 → Trade Quality + Mistake Library**
+**6 → Playbook improvements**
+**7 → Voice/screenshots**
+**8 → remaining advanced features**

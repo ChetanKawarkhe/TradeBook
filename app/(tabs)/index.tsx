@@ -19,6 +19,23 @@ function getTradeDate(trade: Trade) {
   return new Date(trade.exitTime || trade.entryTime);
 }
 
+function formatCompactPnl(value: number) {
+  const sign = value >= 0 ? "+" : "-";
+  const absolute = Math.abs(value);
+
+  if (absolute >= 1000000) {
+    return `${sign}₹${(absolute / 1000000).toFixed(1).replace(/\.0$/, "")}M`;
+  }
+
+  if (absolute >= 1000) {
+    return `${sign}₹${(absolute / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+  }
+
+  return `${sign}₹${absolute.toLocaleString("en-IN", {
+    maximumFractionDigits: 0,
+  })}`;
+}
+
 function isToday(date: Date) {
   const now = new Date();
 
@@ -321,6 +338,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Calendar */}
+      {/* Calendar */}
       <SectionHeader
         title="P&L Calendar"
         action="View all"
@@ -370,18 +388,17 @@ export default function HomeScreen() {
           }).map((_, index) => {
             const day = index + 1;
             const pnl = monthInfo.pnlByDay[day] || 0;
-
             const hasTrade = monthInfo.pnlByDay[day] !== undefined;
 
             return (
               <View key={day} style={styles.calendarDay}>
                 <View
                   style={{
-                    ...styles.dayCircle,
+                    ...styles.dayCell,
                     backgroundColor: hasTrade
                       ? pnl >= 0
                         ? theme.primaryLight
-                        : theme.cardSecondary
+                        : `${theme.negative}18`
                       : "transparent",
                   }}
                 >
@@ -397,6 +414,18 @@ export default function HomeScreen() {
                   >
                     {day}
                   </Text>
+
+                  {hasTrade ? (
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        ...styles.dayPnl,
+                        color: pnl >= 0 ? theme.positive : theme.negative,
+                      }}
+                    >
+                      {formatCompactPnl(pnl)}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
             );
@@ -638,12 +667,12 @@ const styles = {
   calendarMonth: {
     fontSize: 15,
     fontWeight: "800",
-    marginBottom: 14,
+    marginBottom: 16,
   } satisfies TextStyle,
 
   weekRow: {
     flexDirection: "row",
-    marginBottom: 6,
+    marginBottom: 8,
   } satisfies ViewStyle,
 
   weekDay: {
@@ -660,22 +689,29 @@ const styles = {
 
   calendarDay: {
     width: "14.2857%",
-    height: 42,
+    height: 58,
     alignItems: "center",
     justifyContent: "center",
   } satisfies ViewStyle,
 
-  dayCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  dayCell: {
+    width: 46,
+    height: 52,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 2,
   } satisfies ViewStyle,
 
   dayNumber: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 13,
+    fontWeight: "800",
+  } satisfies TextStyle,
+
+  dayPnl: {
+    fontSize: 8,
+    fontWeight: "800",
+    marginTop: 3,
   } satisfies TextStyle,
 
   insightCard: {

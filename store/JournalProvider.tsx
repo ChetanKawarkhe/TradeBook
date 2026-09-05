@@ -1,15 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-import type {
-  JournalEntry,
-  PlaybookRule,
-} from "@/types/journal";
+import type { JournalEntry, PlaybookRule } from "@/types/journal";
 
 const JOURNAL_KEY = "@tradebook/journal";
 const PLAYBOOK_KEY = "@tradebook/playbook";
@@ -28,16 +20,9 @@ type JournalContextType = {
   deleteRule: (id: string) => Promise<void>;
 };
 
-const JournalContext =
-  createContext<JournalContextType | undefined>(
-    undefined
-  );
+const JournalContext = createContext<JournalContextType | undefined>(undefined);
 
-export function JournalProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function JournalProvider({ children }: { children: React.ReactNode }) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [rules, setRules] = useState<PlaybookRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,64 +33,80 @@ export function JournalProvider({
 
   async function loadData() {
     try {
-      const [journalData, playbookData] =
-        await Promise.all([
-          AsyncStorage.getItem(JOURNAL_KEY),
-          AsyncStorage.getItem(PLAYBOOK_KEY),
-        ]);
+      const [journalData, playbookData] = await Promise.all([
+        AsyncStorage.getItem(JOURNAL_KEY),
+        AsyncStorage.getItem(PLAYBOOK_KEY),
+      ]);
 
       if (journalData) {
-        setEntries(JSON.parse(journalData));
-      }
+  const loadedEntries: JournalEntry[] =
+    JSON.parse(journalData);
+
+  const seen = new Set<string>();
+
+  const cleanedEntries = loadedEntries.filter((entry) => {
+    if (seen.has(entry.id)) {
+      return false;
+    }
+
+    seen.add(entry.id);
+    return true;
+  });
+
+  setEntries(cleanedEntries);
+
+  await AsyncStorage.setItem(
+    JOURNAL_KEY,
+    JSON.stringify(cleanedEntries)
+  );
+}
 
       if (playbookData) {
         setRules(JSON.parse(playbookData));
       }
     } catch (error) {
-      console.error(
-        "Failed to load journal data:",
-        error
-      );
+      console.error("Failed to load journal data:", error);
     } finally {
       setLoading(false);
     }
   }
 
   async function addEntry(entry: JournalEntry) {
-    const updated = [entry, ...entries];
+    setEntries((currentEntries) => {
+      const updated = [entry, ...currentEntries];
 
-    setEntries(updated);
+      AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated)).catch(
+        (error) => {
+          console.error("Failed to save journal entry:", error);
+        },
+      );
 
-    await AsyncStorage.setItem(
-      JOURNAL_KEY,
-      JSON.stringify(updated)
-    );
+      return updated;
+    });
   }
 
   async function updateEntry(entry: JournalEntry) {
-    const updated = entries.map((item) =>
-      item.id === entry.id ? entry : item
-    );
+    setEntries((currentEntries) => {
+      const updated = currentEntries.map((item) =>
+        item.id === entry.id ? entry : item,
+      );
 
-    setEntries(updated);
+      AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated)).catch(
+        (error) => {
+          console.error("Failed to update journal entry:", error);
+        },
+      );
 
-    await AsyncStorage.setItem(
-      JOURNAL_KEY,
-      JSON.stringify(updated)
-    );
+      return updated;
+    });
   }
 
   async function deleteEntry(id: string) {
-    const updated = entries.filter(
-      (entry) => entry.id !== id
-    );
+    const updated = entries.filter((entry) => entry.id !== id);
 
     setEntries(updated);
 
-    await AsyncStorage.setItem(
-      JOURNAL_KEY,
-      JSON.stringify(updated)
-    );
+    await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated));
   }
 
   async function addRule(rule: PlaybookRule) {
@@ -113,37 +114,50 @@ export function JournalProvider({
 
     setRules(updated);
 
-    await AsyncStorage.setItem(
-      PLAYBOOK_KEY,
-      JSON.stringify(updated)
-    );
+    await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(updated));
   }
 
   async function updateRule(rule: PlaybookRule) {
-    const updated = rules.map((item) =>
-      item.id === rule.id ? rule : item
-    );
+    const updated = rules.map((item) => (item.id === rule.id ? rule : item));
 
     setRules(updated);
 
-    await AsyncStorage.setItem(
-      PLAYBOOK_KEY,
-      JSON.stringify(updated)
-    );
+    await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(updated));
   }
 
   async function deleteRule(id: string) {
-    const updated = rules.filter(
-      (rule) => rule.id !== id
-    );
+    const updated = rules.filter((rule) => rule.id !== id);
 
     setRules(updated);
 
-    await AsyncStorage.setItem(
-      PLAYBOOK_KEY,
-      JSON.stringify(updated)
-    );
+    await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(updated));
   }
+  async function removeDuplicateEntries() {
+  setEntries((currentEntries) => {
+    const seen = new Set<string>();
+
+    const cleaned = currentEntries.filter((entry) => {
+      if (seen.has(entry.id)) {
+        return false;
+      }
+
+      seen.add(entry.id);
+      return true;
+    });
+
+    AsyncStorage.setItem(
+      JOURNAL_KEY,
+      JSON.stringify(cleaned)
+    ).catch((error) => {
+      console.error(
+        "Failed to clean journal entries:",
+        error
+      );
+    });
+
+    return cleaned;
+  });
+}
 
   return (
     <JournalContext.Provider
@@ -168,9 +182,7 @@ export function useJournal() {
   const context = useContext(JournalContext);
 
   if (!context) {
-    throw new Error(
-      "useJournal must be used inside JournalProvider"
-    );
+    throw new Error("useJournal must be used inside JournalProvider");
   }
 
   return context;
