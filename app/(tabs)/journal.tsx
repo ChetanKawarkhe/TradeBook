@@ -13,6 +13,8 @@ import {
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useJournal } from "@/store/JournalProvider";
+import { useTrades } from "@/store/TradeProvider";
+import { getTradeResultType } from "@/utils/tradeResult";
 import type { JournalEntry } from "@/types/journal";
 
 const MOODS = [
@@ -125,6 +127,7 @@ export default function JournalScreen() {
   }>();
 
   const { entries, addEntry, deleteEntry, updateEntry, loading } = useJournal();
+  const { trades } = useTrades();
 
   const [editing, setEditing] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -141,6 +144,68 @@ export default function JournalScreen() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const todayEntry = entries.find((entry) => entry.date === today);
+
+  const todayTrades = useMemo(
+    () => trades.filter((trade) => trade.exitTime.slice(0, 10) === today),
+    [trades, today],
+  );
+
+  const dailyReview = useMemo(() => {
+  const pnl = todayTrades.reduce((sum, trade) => sum + trade.pnl, 0);
+
+  const followedPlan = todayTrades.filter(
+    (trade) => trade.followedPlan,
+  ).length;
+
+  const goodWins = todayTrades.filter(
+    (trade) => getTradeResultType(trade) === "Good Win",
+  ).length;
+
+  const badWins = todayTrades.filter(
+    (trade) => getTradeResultType(trade) === "Bad Win",
+  ).length;
+
+  const goodLosses = todayTrades.filter(
+    (trade) => getTradeResultType(trade) === "Good Loss",
+  ).length;
+
+  const badLosses = todayTrades.filter(
+    (trade) => getTradeResultType(trade) === "Bad Loss",
+  ).length;
+
+  const planRate =
+    todayTrades.length > 0
+      ? Math.round((followedPlan / todayTrades.length) * 100)
+      : 0;
+
+  let message = "No trades recorded today yet.";
+
+  if (todayTrades.length > 0) {
+    if (badWins > 0) {
+      message =
+        "You made money, but some profitable trades came from breaking the plan.";
+    } else if (badLosses > goodLosses) {
+      message =
+        "Focus on reducing rule violations and protecting your risk.";
+    } else if (planRate >= 80) {
+      message =
+        "Strong process today. Keep protecting the plan regardless of the outcome.";
+    } else {
+      message =
+        "Review your execution and identify one thing to improve tomorrow.";
+    }
+  }
+
+  return {
+    pnl,
+    planRate,
+    goodWins,
+    badWins,
+    goodLosses,
+    badLosses,
+    message,
+  };
+}, [todayTrades]);
 
   function startEditing(entry: JournalEntry) {
     setEditingEntryId(entry.id);
@@ -218,6 +283,7 @@ export default function JournalScreen() {
       whatWentWrong: whatWentWrong.trim(),
       lesson: lesson.trim(),
       notes: notes.trim(),
+      tradeIds: todayTrades.map((trade) => trade.id),
 
       createdAt: existingEntry?.createdAt ?? now,
       updatedAt: now,
@@ -591,7 +657,56 @@ export default function JournalScreen() {
             >
               {todayEntry.plan || "—"}
             </Text>
+            {todayTrades.length > 0 ? (
+              <View
+                style={{
+                  marginTop: 15,
+                  padding: 13,
+                  borderRadius: 13,
+                  backgroundColor: theme.cardSecondary,
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 10,
+                    fontWeight: "800",
+                  }}
+                >
+                  TODAY'S TRADES
+                </Text>
 
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 14,
+                    fontWeight: "700",
+                    marginTop: 4,
+                  }}
+                >
+                  {todayTrades.length}{" "}
+                  {todayTrades.length === 1 ? "trade" : "trades"} recorded today
+                </Text>
+
+                <Pressable
+                  onPress={() => router.push("/trades")}
+                  style={{
+                    marginTop: 8,
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: theme.primary,
+                      fontSize: 12,
+                      fontWeight: "800",
+                    }}
+                  >
+                    View today's trades →
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
             {todayEntry.lesson ? (
               <View
                 style={{
@@ -680,6 +795,222 @@ export default function JournalScreen() {
           </Pressable>
         )}
       </View>
+
+      {/* Daily Review */}
+      {todayTrades.length > 0 ? (
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 20,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              fontWeight: "800",
+            }}
+          >
+            DAILY REVIEW
+          </Text>
+
+          <Text
+            style={{
+              color:
+                dailyReview.pnl > 0
+                  ? theme.positive
+                  : dailyReview.pnl < 0
+                    ? theme.negative
+                    : theme.text,
+              fontSize: 28,
+              fontWeight: "900",
+              marginTop: 5,
+            }}
+          >
+            {dailyReview.pnl >= 0 ? "+" : ""}
+            {dailyReview.pnl.toFixed(2)}
+          </Text>
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              marginTop: 2,
+            }}
+          >
+            Today's P&L · {todayTrades.length}{" "}
+            {todayTrades.length === 1 ? "trade" : "trades"}
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 10,
+              marginTop: 16,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                padding: 11,
+                borderRadius: 13,
+                backgroundColor: theme.cardSecondary,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                PLAN ADHERENCE
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 19,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {dailyReview.planRate}%
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                padding: 11,
+                borderRadius: 13,
+                backgroundColor: theme.cardSecondary,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                GOOD WINS
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.positive,
+                  fontSize: 19,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {dailyReview.goodWins}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                padding: 11,
+                borderRadius: 13,
+                backgroundColor: theme.cardSecondary,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                BAD WINS
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.negative,
+                  fontSize: 19,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {dailyReview.badWins}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                minWidth: "45%",
+                padding: 11,
+                borderRadius: 13,
+                backgroundColor: theme.cardSecondary,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                LOSSES
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 19,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {dailyReview.goodLosses + dailyReview.badLosses}
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={{
+              marginTop: 14,
+              padding: 13,
+              borderRadius: 13,
+              backgroundColor: theme.primaryLight,
+            }}
+          >
+            <Text
+              style={{
+                color: theme.primary,
+                fontSize: 10,
+                fontWeight: "800",
+              }}
+            >
+              PROCESS REVIEW
+            </Text>
+
+            <Text
+              style={{
+                color: theme.text,
+                fontSize: 13,
+                lineHeight: 19,
+                marginTop: 4,
+              }}
+            >
+              {dailyReview.message}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
 
       {/* Journal history */}
       <View

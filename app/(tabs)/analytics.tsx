@@ -9,6 +9,7 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTrades } from "@/store/TradeProvider";
 import type { Trade } from "@/types/trade";
 import { formatCurrency } from "@/utils/trade";
+import { getTradeResultType } from "@/utils/tradeResult";
 import { calculateTraderScore } from "@/utils/traderScore";
 import { generateTradingInsights } from "@/utils/tradingInsights";
 
@@ -291,6 +292,47 @@ export default function AnalyticsScreen() {
     [trades],
   );
 
+  const disciplineStreak = useMemo(() => {
+    const sortedTrades = [...trades].sort(
+      (a, b) => new Date(a.exitTime).getTime() - new Date(b.exitTime).getTime(),
+    );
+
+    let currentStreak = 0;
+    let bestStreak = 0;
+
+    for (const trade of sortedTrades) {
+      if (trade.followedPlan) {
+        currentStreak += 1;
+        bestStreak = Math.max(bestStreak, currentStreak);
+      } else {
+        currentStreak = 0;
+      }
+    }
+
+    let message = "Start building your discipline streak.";
+
+    if (currentStreak >= 10) {
+      message =
+        "Excellent discipline. You are consistently protecting your process.";
+    } else if (currentStreak >= 5) {
+      message =
+        "Strong discipline streak. Keep following the plan regardless of outcomes.";
+    } else if (currentStreak >= 3) {
+      message = "Good momentum. Keep protecting the process trade after trade.";
+    } else if (currentStreak > 0) {
+      message = "You are on a discipline streak. Keep it going.";
+    } else if (sortedTrades.length > 0) {
+      message =
+        "Your latest trade broke the streak. Focus on following the plan on the next trade.";
+    }
+
+    return {
+      currentStreak,
+      bestStreak,
+      message,
+    };
+  }, [trades]);
+
   const [infoType, setInfoType] = useState<
     "profitFactor" | "expectancy" | "drawdown" | null
   >(null);
@@ -304,6 +346,21 @@ export default function AnalyticsScreen() {
 
     const wins = trades.filter((trade) => trade.pnl > 0);
     const losses = trades.filter((trade) => trade.pnl < 0);
+    const goodWins = trades.filter(
+      (trade) => getTradeResultType(trade) === "Good Win",
+    ).length;
+
+    const badWins = trades.filter(
+      (trade) => getTradeResultType(trade) === "Bad Win",
+    ).length;
+
+    const goodLosses = trades.filter(
+      (trade) => getTradeResultType(trade) === "Good Loss",
+    ).length;
+
+    const badLosses = trades.filter(
+      (trade) => getTradeResultType(trade) === "Bad Loss",
+    ).length;
 
     const grossProfit = wins.reduce((sum, trade) => sum + trade.pnl, 0);
 
@@ -534,6 +591,12 @@ export default function AnalyticsScreen() {
       totalPnl,
       wins: wins.length,
       losses: losses.length,
+
+      goodWins,
+      badWins,
+      goodLosses,
+      badLosses,
+
       winRate,
       averageWin,
       averageLoss,
@@ -845,6 +908,168 @@ export default function AnalyticsScreen() {
           </Text>
         </View>
 
+        {/* Trading Health */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            borderWidth: 1,
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 12,
+              fontWeight: "700",
+            }}
+          >
+            TRADING HEALTH
+          </Text>
+
+          <Text
+            style={{
+              color: theme.text,
+              fontSize: 28,
+              fontWeight: "800",
+              marginTop: 4,
+            }}
+          >
+            {Math.round(
+              traderScore.planAdherence * 0.35 +
+                traderScore.consistency * 0.3 +
+                traderScore.journaling * 0.2 +
+                ((analytics.goodWins + analytics.goodLosses) /
+                  Math.max(
+                    analytics.goodWins +
+                      analytics.badWins +
+                      analytics.goodLosses +
+                      analytics.badLosses,
+                    1,
+                  )) *
+                  100 *
+                  0.15,
+            )}
+            <Text
+              style={{
+                color: theme.textSecondary,
+                fontSize: 14,
+                fontWeight: "600",
+              }}
+            >
+              /100
+            </Text>
+          </Text>
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              lineHeight: 16,
+              marginTop: 8,
+            }}
+          >
+            A process-focused view of your discipline, consistency, journaling,
+            and quality of execution.
+          </Text>
+        </View>
+
+        {/* Discipline Streak */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            borderWidth: 1,
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 12,
+              fontWeight: "700",
+            }}
+          >
+            DISCIPLINE STREAK
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              marginTop: 4,
+            }}
+          >
+            <View>
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 30,
+                  fontWeight: "900",
+                }}
+              >
+                {disciplineStreak.currentStreak}
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 11,
+                  marginTop: -2,
+                }}
+              >
+                current streak
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: theme.cardSecondary,
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 9,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                BEST
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.primary,
+                  fontSize: 17,
+                  fontWeight: "800",
+                  marginTop: 2,
+                }}
+              >
+                {disciplineStreak.bestStreak}
+              </Text>
+            </View>
+          </View>
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              lineHeight: 16,
+              marginTop: 10,
+            }}
+          >
+            {disciplineStreak.message}
+          </Text>
+        </View>
+
         {/* Trading Insights */}
         <View
           style={{
@@ -1028,7 +1253,137 @@ export default function AnalyticsScreen() {
             />
           </View>
         </View>
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 16,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.text,
+              fontSize: 16,
+              fontWeight: "800",
+              marginBottom: 12,
+            }}
+          >
+            Trade Outcomes
+          </Text>
 
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 10,
+            }}
+          >
+            <View style={{ flex: 1, minWidth: "45%" }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                Good Wins
+              </Text>
+              <Text
+                style={{
+                  color: theme.positive,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {analytics.goodWins}
+              </Text>
+            </View>
+
+            <View style={{ flex: 1, minWidth: "45%" }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                Bad Wins
+              </Text>
+              <Text
+                style={{
+                  color: theme.negative,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {analytics.badWins}
+              </Text>
+            </View>
+
+            <View style={{ flex: 1, minWidth: "45%" }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                Good Losses
+              </Text>
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {analytics.goodLosses}
+              </Text>
+            </View>
+
+            <View style={{ flex: 1, minWidth: "45%" }}>
+              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                Bad Losses
+              </Text>
+              <Text
+                style={{
+                  color: theme.negative,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  marginTop: 4,
+                }}
+              >
+                {analytics.badLosses}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Behavioral Insights */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            borderWidth: 1,
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 12,
+              fontWeight: "700",
+            }}
+          >
+            BEHAVIORAL INSIGHT
+          </Text>
+
+          <Text
+            style={{
+              color: theme.text,
+              fontSize: 15,
+              fontWeight: "700",
+              marginTop: 8,
+              lineHeight: 21,
+            }}
+          >
+            {analytics.badWins > analytics.goodWins
+              ? "Some profitable trades are coming from poor execution. Focus on following your plan even when the trade wins."
+              : analytics.badLosses > analytics.goodLosses
+                ? "Losses are showing signs of poor execution. Focus on reducing rule violations and protecting your risk."
+                : analytics.goodWins + analytics.goodLosses > 0
+                  ? "Your results show a healthy connection between execution quality and outcomes. Keep protecting the process."
+                  : "Keep recording your trades to build a clearer picture of your execution quality."}
+          </Text>
+        </View>
         {/* Equity */}
         <View
           style={{

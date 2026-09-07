@@ -13,6 +13,7 @@ import {
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useJournal } from "@/store/JournalProvider";
+import { useTrades } from "@/store/TradeProvider";
 import type { PlaybookRule } from "@/types/journal";
 
 const CATEGORIES: PlaybookRule["category"][] = [
@@ -26,44 +27,61 @@ export default function PlaybookScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme ?? "light"];
 
-  const {
-    rules,
-    addRule,
-    deleteRule,
-  } = useJournal();
+  const { rules, addRule, deleteRule } = useJournal();
+
+  const { trades } = useTrades();
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] =
-    useState("");
+  const [description, setDescription] = useState("");
 
-  const [category, setCategory] =
-    useState<PlaybookRule["category"]>("ENTRY");
+  const [category, setCategory] = useState<PlaybookRule["category"]>("ENTRY");
+
+  const playbookStats = React.useMemo(() => {
+    const totalTrades = trades.length;
+
+    const followedPlan = trades.filter((trade) => trade.followedPlan).length;
+
+    const adherenceRate =
+      totalTrades > 0 ? Math.round((followedPlan / totalTrades) * 100) : 0;
+
+    const ruleViolations = rules.map((rule) => {
+      const violations = trades.filter(
+        (trade) =>
+          trade.ruleViolation?.trim().toLowerCase() ===
+          rule.title.trim().toLowerCase(),
+      ).length;
+
+      return {
+        rule,
+        violations,
+      };
+    });
+
+    return {
+      totalTrades,
+      adherenceRate,
+      ruleViolations,
+    };
+  }, [trades, rules]);
 
   async function saveRule() {
     if (!title.trim()) {
-      Alert.alert(
-        "Missing rule",
-        "Give your rule a title."
-      );
+      Alert.alert("Missing rule", "Give your rule a title.");
       return;
     }
 
     const rule: PlaybookRule = {
-      id: `${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}`,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 
       title: title.trim(),
 
-      description:
-        description.trim(),
+      description: description.trim(),
 
       category,
 
       active: true,
 
-      createdAt:
-        new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
     await addRule(rule);
@@ -86,7 +104,7 @@ export default function PlaybookScreen() {
           style: "destructive",
           onPress: () => deleteRule(id),
         },
-      ]
+      ],
     );
   }
 
@@ -118,11 +136,7 @@ export default function PlaybookScreen() {
             marginRight: 12,
           }}
         >
-          <Ionicons
-            name="arrow-back"
-            size={21}
-            color={theme.text}
-          />
+          <Ionicons name="arrow-back" size={21} color={theme.text} />
         </Pressable>
 
         <View>
@@ -232,18 +246,14 @@ export default function PlaybookScreen() {
                     ? theme.primary
                     : theme.cardSecondary,
                   borderWidth: 1,
-                  borderColor: selected
-                    ? theme.primary
-                    : theme.border,
+                  borderColor: selected ? theme.primary : theme.border,
                   marginRight: 7,
                   marginBottom: 7,
                 }}
               >
                 <Text
                   style={{
-                    color: selected
-                      ? "#FFFFFF"
-                      : theme.text,
+                    color: selected ? "#FFFFFF" : theme.text,
                     fontSize: 11,
                     fontWeight: "700",
                   }}
@@ -308,6 +318,130 @@ export default function PlaybookScreen() {
           </Text>
         </Pressable>
       </View>
+      {/* Rule Tracking */}
+      <View
+        style={{
+          backgroundColor: theme.card,
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: theme.border,
+          padding: 16,
+          marginBottom: 18,
+        }}
+      >
+        <Text
+          style={{
+            color: theme.textSecondary,
+            fontSize: 11,
+            fontWeight: "800",
+          }}
+        >
+          RULE TRACKING
+        </Text>
+
+        <Text
+          style={{
+            color: theme.text,
+            fontSize: 24,
+            fontWeight: "900",
+            marginTop: 5,
+          }}
+        >
+          {playbookStats.adherenceRate}%
+        </Text>
+
+        <Text
+          style={{
+            color: theme.textSecondary,
+            fontSize: 11,
+            marginTop: 2,
+          }}
+        >
+          Plan adherence across {playbookStats.totalTrades}{" "}
+          {playbookStats.totalTrades === 1 ? "trade" : "trades"}
+        </Text>
+
+        {rules.length > 0 ? (
+          <View
+            style={{
+              marginTop: 15,
+            }}
+          >
+            <Text
+              style={{
+                color: theme.text,
+                fontSize: 13,
+                fontWeight: "800",
+                marginBottom: 9,
+              }}
+            >
+              Rule Violations
+            </Text>
+
+            {playbookStats.ruleViolations.map(({ rule, violations }) => (
+              <View
+                key={rule.id}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingVertical: 9,
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.border,
+                }}
+              >
+                <View
+                  style={{
+                    flex: 1,
+                    paddingRight: 10,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontSize: 12,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {rule.title}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: theme.textSecondary,
+                      fontSize: 10,
+                      marginTop: 2,
+                    }}
+                  >
+                    {rule.category}
+                  </Text>
+                </View>
+
+                <Text
+                  style={{
+                    color: violations > 0 ? theme.negative : theme.positive,
+                    fontSize: 13,
+                    fontWeight: "800",
+                  }}
+                >
+                  {violations} {violations === 1 ? "violation" : "violations"}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              marginTop: 14,
+              lineHeight: 17,
+            }}
+          >
+            Add playbook rules to start tracking which rules are being violated.
+          </Text>
+        )}
+      </View>
 
       {/* Rules */}
       <View
@@ -355,11 +489,7 @@ export default function PlaybookScreen() {
               paddingVertical: 30,
             }}
           >
-            <Ionicons
-              name="book-outline"
-              size={32}
-              color={theme.primary}
-            />
+            <Ionicons name="book-outline" size={32} color={theme.primary} />
 
             <Text
               style={{
@@ -380,8 +510,7 @@ export default function PlaybookScreen() {
                 marginTop: 4,
               }}
             >
-              Turn your lessons into rules you can
-              actually follow.
+              Turn your lessons into rules you can actually follow.
             </Text>
           </View>
         ) : (
@@ -391,8 +520,7 @@ export default function PlaybookScreen() {
               style={{
                 paddingVertical: 14,
                 borderBottomWidth: 1,
-                borderBottomColor:
-                  theme.border,
+                borderBottomColor: theme.border,
               }}
             >
               <View
@@ -416,8 +544,7 @@ export default function PlaybookScreen() {
                   >
                     <View
                       style={{
-                        backgroundColor:
-                          theme.primaryLight,
+                        backgroundColor: theme.primaryLight,
                         borderRadius: 999,
                         paddingHorizontal: 8,
                         paddingVertical: 4,
@@ -449,8 +576,7 @@ export default function PlaybookScreen() {
                   {rule.description ? (
                     <Text
                       style={{
-                        color:
-                          theme.textSecondary,
+                        color: theme.textSecondary,
                         fontSize: 12,
                         lineHeight: 18,
                       }}
@@ -460,12 +586,7 @@ export default function PlaybookScreen() {
                   ) : null}
                 </View>
 
-                <Pressable
-                  onPress={() =>
-                    removeRule(rule.id)
-                  }
-                  hitSlop={8}
-                >
+                <Pressable onPress={() => removeRule(rule.id)} hitSlop={8}>
                   <Ionicons
                     name="trash-outline"
                     size={17}

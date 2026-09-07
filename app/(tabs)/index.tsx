@@ -9,6 +9,8 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { Ionicons } from "@expo/vector-icons";
+
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTrades } from "@/store/TradeProvider";
@@ -276,21 +278,18 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        <View
+        <TouchableOpacity
+          activeOpacity={0.75}
+          onPress={() => router.push("/settings")}
           style={{
             ...styles.profileCircle,
-            backgroundColor: theme.primaryLight,
+            backgroundColor: theme.card,
+            borderWidth: 1,
+            borderColor: theme.border,
           }}
         >
-          <Text
-            style={{
-              ...styles.profileText,
-              color: theme.primary,
-            }}
-          >
-            T
-          </Text>
-        </View>
+          <Ionicons name="options-outline" size={22} color={theme.text} />
+        </TouchableOpacity>
       </View>
 
       {/* Today's P&L */}

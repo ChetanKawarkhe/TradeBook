@@ -44,7 +44,7 @@ const MISTAKES = [
   "None",
   "Early Entry",
   "Late Entry",
-  "Oversized",
+  "Oversized Position",
   "Moved Stop",
   "Early Exit",
   "Revenge Trade",

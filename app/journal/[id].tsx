@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useJournal } from "@/store/JournalProvider";
+import { useTrades } from "@/store/TradeProvider";
 
 export default function JournalEntryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -13,8 +14,15 @@ export default function JournalEntryDetailScreen() {
   const theme = Colors[colorScheme === "dark" ? "dark" : "light"];
 
   const { entries, deleteEntry } = useJournal();
+  const { trades } = useTrades();
 
   const entry = entries.find((item) => item.id === id);
+
+  const linkedTrades = entry
+    ? entry.tradeIds && entry.tradeIds.length > 0
+      ? trades.filter((trade) => entry.tradeIds?.includes(trade.id))
+      : trades.filter((trade) => trade.exitTime.slice(0, 10) === entry.date)
+    : [];
 
   if (!entry) {
     return (
@@ -367,6 +375,114 @@ export default function JournalEntryDetailScreen() {
           icon="document-text-outline"
           value={entry.notes}
         />
+        {/* Linked Trades */}
+        {linkedTrades.length > 0 ? (
+          <View
+            style={{
+              backgroundColor: theme.card,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: theme.border,
+              padding: 16,
+              marginBottom: 12,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={17}
+                color={theme.primary}
+              />
+
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 14,
+                  fontWeight: "800",
+                }}
+              >
+                Today's Trades
+              </Text>
+            </View>
+
+            {linkedTrades.map((trade) => (
+              <Pressable
+                key={trade.id}
+                onPress={() => router.push(`/trade/${trade.id}`)}
+                style={{
+                  padding: 12,
+                  borderRadius: 13,
+                  backgroundColor: theme.cardSecondary,
+                  marginBottom: 8,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontSize: 14,
+                      fontWeight: "800",
+                    }}
+                  >
+                    {trade.instrument}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: trade.pnl >= 0 ? theme.positive : theme.negative,
+                      fontSize: 13,
+                      fontWeight: "800",
+                    }}
+                  >
+                    {trade.pnl >= 0 ? "+" : ""}
+                    {trade.pnl.toFixed(2)}
+                  </Text>
+                </View>
+
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 11,
+                    marginTop: 4,
+                  }}
+                >
+                  {trade.direction} · {trade.strategy || "No strategy"}
+                </Text>
+              </Pressable>
+            ))}
+
+            <Pressable
+              onPress={() => router.push("/trades")}
+              style={{
+                alignSelf: "flex-start",
+                marginTop: 2,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.primary,
+                  fontSize: 12,
+                  fontWeight: "800",
+                }}
+              >
+                View all trades →
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* Edit */}
         <Pressable

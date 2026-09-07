@@ -18,6 +18,9 @@ type JournalContextType = {
   addRule: (rule: PlaybookRule) => Promise<void>;
   updateRule: (rule: PlaybookRule) => Promise<void>;
   deleteRule: (id: string) => Promise<void>;
+
+  replaceEntries: (entries: JournalEntry[]) => Promise<void>;
+  replaceRules: (rules: PlaybookRule[]) => Promise<void>;
 };
 
 const JournalContext = createContext<JournalContextType | undefined>(undefined);
@@ -39,27 +42,23 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
       ]);
 
       if (journalData) {
-  const loadedEntries: JournalEntry[] =
-    JSON.parse(journalData);
+        const loadedEntries: JournalEntry[] = JSON.parse(journalData);
 
-  const seen = new Set<string>();
+        const seen = new Set<string>();
 
-  const cleanedEntries = loadedEntries.filter((entry) => {
-    if (seen.has(entry.id)) {
-      return false;
-    }
+        const cleanedEntries = loadedEntries.filter((entry) => {
+          if (seen.has(entry.id)) {
+            return false;
+          }
 
-    seen.add(entry.id);
-    return true;
-  });
+          seen.add(entry.id);
+          return true;
+        });
 
-  setEntries(cleanedEntries);
+        setEntries(cleanedEntries);
 
-  await AsyncStorage.setItem(
-    JOURNAL_KEY,
-    JSON.stringify(cleanedEntries)
-  );
-}
+        await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(cleanedEntries));
+      }
 
       if (playbookData) {
         setRules(JSON.parse(playbookData));
@@ -72,33 +71,21 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function addEntry(entry: JournalEntry) {
-    setEntries((currentEntries) => {
-      const updated = [entry, ...currentEntries];
+    const updated = [entry, ...entries];
 
-      AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated)).catch(
-        (error) => {
-          console.error("Failed to save journal entry:", error);
-        },
-      );
+    setEntries(updated);
 
-      return updated;
-    });
+    await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated));
   }
 
   async function updateEntry(entry: JournalEntry) {
-    setEntries((currentEntries) => {
-      const updated = currentEntries.map((item) =>
-        item.id === entry.id ? entry : item,
-      );
+    const updated = entries.map((item) =>
+      item.id === entry.id ? entry : item,
+    );
 
-      AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated)).catch(
-        (error) => {
-          console.error("Failed to update journal entry:", error);
-        },
-      );
+    setEntries(updated);
 
-      return updated;
-    });
+    await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated));
   }
 
   async function deleteEntry(id: string) {
@@ -132,32 +119,18 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
 
     await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(updated));
   }
-  async function removeDuplicateEntries() {
-  setEntries((currentEntries) => {
-    const seen = new Set<string>();
 
-    const cleaned = currentEntries.filter((entry) => {
-      if (seen.has(entry.id)) {
-        return false;
-      }
+  async function replaceEntries(restoredEntries: JournalEntry[]) {
+    setEntries(restoredEntries);
 
-      seen.add(entry.id);
-      return true;
-    });
+    await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(restoredEntries));
+  }
 
-    AsyncStorage.setItem(
-      JOURNAL_KEY,
-      JSON.stringify(cleaned)
-    ).catch((error) => {
-      console.error(
-        "Failed to clean journal entries:",
-        error
-      );
-    });
+  async function replaceRules(restoredRules: PlaybookRule[]) {
+    setRules(restoredRules);
 
-    return cleaned;
-  });
-}
+    await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(restoredRules));
+  }
 
   return (
     <JournalContext.Provider
@@ -171,6 +144,8 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
         addRule,
         updateRule,
         deleteRule,
+        replaceEntries,
+        replaceRules,
       }}
     >
       {children}

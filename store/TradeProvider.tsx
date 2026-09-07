@@ -10,6 +10,7 @@ type TradeContextType = {
   loading: boolean;
   addTrade: (trade: Trade) => Promise<void>;
   deleteTrade: (id: string) => Promise<void>;
+  replaceTrades: (trades: Trade[]) => Promise<void>;
 };
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
@@ -52,6 +53,12 @@ export function TradeProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   }
 
+  async function replaceTrades(restoredTrades: Trade[]) {
+    setTrades(restoredTrades);
+
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(restoredTrades));
+  }
+
   return (
     <TradeContext.Provider
       value={{
@@ -59,6 +66,7 @@ export function TradeProvider({ children }: { children: React.ReactNode }) {
         loading,
         addTrade,
         deleteTrade,
+        replaceTrades,
       }}
     >
       {children}

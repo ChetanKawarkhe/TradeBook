@@ -1,17 +1,14 @@
 export type JournalEntry = {
   id: string;
   date: string;
-
   mood?: string;
   marketBias?: string;
-
   plan: string;
   whatWentWell: string;
   whatWentWrong: string;
   lesson: string;
-
   notes: string;
-
+  tradeIds?: string[];
   createdAt: string;
   updatedAt: string;
 };

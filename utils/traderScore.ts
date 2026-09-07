@@ -1,4 +1,5 @@
 import type { Trade } from "@/types/trade";
+import { getTradeResultType } from "@/utils/tradeResult";
 
 export type TraderScore = {
   overall: number;
@@ -28,7 +29,7 @@ export function calculateTraderScore(
   }
 
   // --------------------------------
-  // 1. Plan Adherence — 40%
+  // 1. Plan Adherence — 35%
   // --------------------------------
   const followedPlanCount = trades.filter(
     (trade) => trade.followedPlan
@@ -77,14 +78,33 @@ export function calculateTraderScore(
   // 3. Consistency — 20%
   // --------------------------------
   const winRate =
-    trades.length > 0
-      ? (winningTrades.length / trades.length) * 100
-      : 0;
+    (winningTrades.length / trades.length) * 100;
 
-  const consistency = clamp(
-    winRate * 0.7 +
-      planAdherence * 0.3
-  );
+  const goodOutcomeCount = trades.filter((trade) => {
+    const result = getTradeResultType(trade);
+
+    return result === "Good Win" || result === "Good Loss";
+  }).length;
+
+  const outcomeDiscipline =
+  (goodOutcomeCount / trades.length) * 100;
+
+const mistakeCount = trades.filter(
+  (trade) =>
+    trade.mistake &&
+    trade.mistake.trim().length > 0 &&
+    trade.mistake !== "None"
+).length;
+
+const mistakeRate =
+  (mistakeCount / trades.length) * 100;
+
+const consistency = clamp(
+  winRate * 0.5 +
+    planAdherence * 0.3 +
+    outcomeDiscipline * 0.2 -
+    mistakeRate * 0.15
+);
 
   // --------------------------------
   // 4. Journaling — 15%
@@ -104,9 +124,9 @@ export function calculateTraderScore(
   // Overall Score
   // --------------------------------
   const overall = Math.round(
-    planAdherence * 0.4 +
+    planAdherence * 0.35 +
       performance * 0.25 +
-      consistency * 0.2 +
+      consistency * 0.25 +
       journaling * 0.15
   );
 
@@ -118,4 +138,4 @@ export function calculateTraderScore(
     journaling: Math.round(journaling),
     tradesCount: trades.length,
   };
-}
+}       

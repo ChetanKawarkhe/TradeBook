@@ -11,10 +11,11 @@ import {
 } from "react-native";
 
 import { Colors } from "@/constants/theme";
-import { evaluateTrade } from "@/core/TraderCore";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTrades } from "@/store/TradeProvider";
 import { formatCurrency } from "@/utils/trade";
+import { calculateTradeQuality } from "@/utils/tradeQuality";
+import { getTradeResultType } from "@/utils/tradeResult";
 
 function InfoItem({
   label,
@@ -85,18 +86,11 @@ export default function TradeDetailScreen() {
   }
 
   const positive = trade.pnl >= 0;
-  const tradeQuality = evaluateTrade(trade);
+  const tradeQuality = calculateTradeQuality(trade);
 
   const tradeDate = new Date(trade.exitTime || trade.entryTime);
 
-  const resultType =
-    trade.pnl >= 0
-      ? trade.followedPlan
-        ? "Good Win"
-        : "Bad Win"
-      : trade.followedPlan
-        ? "Good Loss"
-        : "Bad Loss";
+  const resultType = getTradeResultType(trade);
 
   function handleDelete() {
     const tradeId = trade?.id;
@@ -379,27 +373,31 @@ export default function TradeDetailScreen() {
           </View>
 
           <View style={styles.qualityReasons}>
-            {tradeQuality.reasons.map((reason) => (
-              <View key={reason} style={styles.qualityReasonRow}>
-                <Text
-                  style={{
-                    ...styles.qualityCheck,
-                    color: theme.positive,
-                  }}
-                >
-                  ✓
-                </Text>
+            {tradeQuality.reasons.map((reason) => {
+              const isNegative = reason.toLowerCase().includes("did not");
 
-                <Text
-                  style={{
-                    ...styles.qualityReason,
-                    color: theme.textSecondary,
-                  }}
-                >
-                  {reason}
-                </Text>
-              </View>
-            ))}
+              return (
+                <View key={reason} style={styles.qualityReasonRow}>
+                  <Text
+                    style={{
+                      ...styles.qualityCheck,
+                      color: isNegative ? theme.negative : theme.positive,
+                    }}
+                  >
+                    {isNegative ? "!" : "✓"}
+                  </Text>
+
+                  <Text
+                    style={{
+                      ...styles.qualityReason,
+                      color: theme.textSecondary,
+                    }}
+                  >
+                    {reason}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         </View>
 
