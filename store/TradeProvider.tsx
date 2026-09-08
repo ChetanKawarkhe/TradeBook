@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 import type { Trade } from "@/types/trade";
+import { createAutomaticBackup } from "@/utils/backup";
 
 const STORAGE_KEY = "@tradebook/trades";
 
@@ -43,6 +44,12 @@ export function TradeProvider({ children }: { children: React.ReactNode }) {
     setTrades(updated);
 
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic trade backup failed:", error);
+    }
   }
 
   async function deleteTrade(id: string) {
@@ -51,12 +58,24 @@ export function TradeProvider({ children }: { children: React.ReactNode }) {
     setTrades(updated);
 
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic trade backup failed:", error);
+    }
   }
 
   async function replaceTrades(restoredTrades: Trade[]) {
     setTrades(restoredTrades);
 
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(restoredTrades));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic trade backup failed:", error);
+    }
   }
 
   return (

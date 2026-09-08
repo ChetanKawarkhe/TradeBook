@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 import type { JournalEntry, PlaybookRule } from "@/types/journal";
+import { createAutomaticBackup } from "@/utils/backup";
 
 const JOURNAL_KEY = "@tradebook/journal";
 const PLAYBOOK_KEY = "@tradebook/playbook";
@@ -76,6 +77,12 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
     setEntries(updated);
 
     await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic journal backup failed:", error);
+    }
   }
 
   async function updateEntry(entry: JournalEntry) {
@@ -86,6 +93,12 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
     setEntries(updated);
 
     await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic journal backup failed:", error);
+    }
   }
 
   async function deleteEntry(id: string) {
@@ -94,6 +107,12 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
     setEntries(updated);
 
     await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic journal backup failed:", error);
+    }
   }
 
   async function addRule(rule: PlaybookRule) {
@@ -102,6 +121,12 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
     setRules(updated);
 
     await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic playbook backup failed:", error);
+    }
   }
 
   async function updateRule(rule: PlaybookRule) {
@@ -110,6 +135,12 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
     setRules(updated);
 
     await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic playbook backup failed:", error);
+    }
   }
 
   async function deleteRule(id: string) {
@@ -118,18 +149,36 @@ export function JournalProvider({ children }: { children: React.ReactNode }) {
     setRules(updated);
 
     await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(updated));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic playbook backup failed:", error);
+    }
   }
 
   async function replaceEntries(restoredEntries: JournalEntry[]) {
     setEntries(restoredEntries);
 
     await AsyncStorage.setItem(JOURNAL_KEY, JSON.stringify(restoredEntries));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic journal backup failed:", error);
+    }
   }
 
   async function replaceRules(restoredRules: PlaybookRule[]) {
     setRules(restoredRules);
 
     await AsyncStorage.setItem(PLAYBOOK_KEY, JSON.stringify(restoredRules));
+
+    try {
+      await createAutomaticBackup();
+    } catch (error) {
+      console.error("Automatic playbook backup failed:", error);
+    }
   }
 
   return (

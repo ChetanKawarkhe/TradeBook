@@ -1,4 +1,4 @@
-  import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 
 import type { JournalEntry, PlaybookRule } from "@/types/journal";
@@ -7,6 +7,12 @@ import type { Trade } from "@/types/trade";
 const TRADES_KEY = "@tradebook/trades";
 const JOURNAL_KEY = "@tradebook/journal";
 const PLAYBOOK_KEY = "@tradebook/playbook";
+
+const BACKUP_DIRECTORY =
+  `${FileSystem.documentDirectory}tradebook-backup/`;
+
+const BACKUP_FILE =
+  `${BACKUP_DIRECTORY}tradebook-backup.json`;
 
 export const BACKUP_VERSION = 1;
 
@@ -18,55 +24,70 @@ export type TradeBookBackup = {
   playbookRules: PlaybookRule[];
 };
 
-export async function createTradeBookBackup(
-  directoryUri: string,
-): Promise<string | null> {
+async function getCurrentBackup(): Promise<TradeBookBackup> {
+  const [tradesData, journalData, playbookData] =
+    await Promise.all([
+      AsyncStorage.getItem(TRADES_KEY),
+      AsyncStorage.getItem(JOURNAL_KEY),
+      AsyncStorage.getItem(PLAYBOOK_KEY),
+    ]);
+
+  return {
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    trades: tradesData ? JSON.parse(tradesData) : [],
+    journalEntries: journalData
+      ? JSON.parse(journalData)
+      : [],
+    playbookRules: playbookData
+      ? JSON.parse(playbookData)
+      : [],
+  };
+}
+
+export async function createAutomaticBackup(): Promise<void> {
   try {
-    const [tradesData, journalData, playbookData] =
-      await Promise.all([
-        AsyncStorage.getItem(TRADES_KEY),
-        AsyncStorage.getItem(JOURNAL_KEY),
-        AsyncStorage.getItem(PLAYBOOK_KEY),
-      ]);
+    const directoryInfo =
+      await FileSystem.getInfoAsync(BACKUP_DIRECTORY);
 
-    const backup: TradeBookBackup = {
-      version: BACKUP_VERSION,
-      exportedAt: new Date().toISOString(),
-      trades: tradesData ? JSON.parse(tradesData) : [],
-      journalEntries: journalData ? JSON.parse(journalData) : [],
-      playbookRules: playbookData ? JSON.parse(playbookData) : [],
-    };
-
-    const fileName = `TradeBook_Backup_${new Date()
-      .toISOString()
-      .slice(0, 10)}.json`;
-
-    const fileUri =
-      await FileSystem.StorageAccessFramework.createFileAsync(
-        directoryUri,
-        fileName,
-        "application/json",
+    if (!directoryInfo.exists) {
+      await FileSystem.makeDirectoryAsync(
+        BACKUP_DIRECTORY,
+        {
+          intermediates: true,
+        },
       );
+    }
+
+    const backup = await getCurrentBackup();
 
     await FileSystem.writeAsStringAsync(
-      fileUri,
+      BACKUP_FILE,
       JSON.stringify(backup, null, 2),
     );
-
-    return fileName;
   } catch (error) {
-    console.error("Failed to create TradeBook backup:", error);
+    console.error(
+      "Failed to create automatic backup:",
+      error,
+    );
+
     throw error;
   }
 }
 
-export async function restoreTradeBookBackup(
-  backupFileUri: string,
-): Promise<TradeBookBackup> {
+export async function restoreAutomaticBackup(): Promise<TradeBookBackup> {
   try {
-    const backupText = await FileSystem.readAsStringAsync(
-      backupFileUri,
-    );
+    const fileInfo =
+      await FileSystem.getInfoAsync(BACKUP_FILE);
+
+    if (!fileInfo.exists) {
+      throw new Error("No TradeBook backup was found.");
+    }
+
+    const backupText =
+      await FileSystem.readAsStringAsync(
+        BACKUP_FILE,
+      );
 
     const backup: TradeBookBackup =
       JSON.parse(backupText);
@@ -79,7 +100,9 @@ export async function restoreTradeBookBackup(
       !Array.isArray(backup.journalEntries) ||
       !Array.isArray(backup.playbookRules)
     ) {
-      throw new Error("Invalid TradeBook backup file.");
+      throw new Error(
+        "Invalid TradeBook backup.",
+      );
     }
 
     if (backup.version > BACKUP_VERSION) {
@@ -90,7 +113,11 @@ export async function restoreTradeBookBackup(
 
     return backup;
   } catch (error) {
-    console.error("Failed to read TradeBook backup:", error);
+    console.error(
+      "Failed to restore automatic backup:",
+      error,
+    );
+
     throw error;
   }
 }
@@ -105,11 +132,15 @@ export async function saveRestoredTradeBookBackup(
     ),
     AsyncStorage.setItem(
       JOURNAL_KEY,
-      JSON.stringify(backup.journalEntries),
+      JSON.stringify(
+        backup.journalEntries,
+      ),
     ),
     AsyncStorage.setItem(
       PLAYBOOK_KEY,
-      JSON.stringify(backup.playbookRules),
+      JSON.stringify(
+        backup.playbookRules,
+      ),
     ),
   ]);
 }

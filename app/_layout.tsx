@@ -3,11 +3,13 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, router, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { AuthProvider, useAuth } from "@/store/AuthProvider";
 import { JournalProvider } from "@/store/JournalProvider";
 import { TradeProvider } from "@/store/TradeProvider";
 
@@ -15,24 +17,55 @@ export const unstable_settings = {
   anchor: "(tabs)",
 };
 
-export default function RootLayout() {
+function RootNavigation() {
   const colorScheme = useColorScheme();
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    const inLoginScreen = segments[0] === "login";
+
+    if (!user && !inLoginScreen) {
+      router.replace("/login");
+      return;
+    }
+
+    if (user && inLoginScreen) {
+      router.replace("/(tabs)");
+    }
+  }, [user, loading, segments]);
+
+  if (loading) {
+    return null;
+  }
 
   return (
-    <TradeProvider>
-      <JournalProvider>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-            <Stack.Screen name="trade/[id]" options={{ headerShown: false }} />
-          </Stack>
+        <Stack.Screen name="trade/[id]" options={{ headerShown: false }} />
 
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </JournalProvider>
-    </TradeProvider>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+      </Stack>
+
+      <StatusBar style="auto" />
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <TradeProvider>
+        <JournalProvider>
+          <RootNavigation />
+        </JournalProvider>
+      </TradeProvider>
+    </AuthProvider>
   );
 }
