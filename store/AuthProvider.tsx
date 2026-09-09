@@ -1,11 +1,7 @@
+import Constants from "expo-constants";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-import {
-  GoogleSignin,
-  type User,
-} from "@react-native-google-signin/google-signin";
-
-import { signInWithGoogle, signOutFromGoogle } from "@/utils/googleAuth";
+import type { User } from "@react-native-google-signin/google-signin";
 
 type AuthContextType = {
   user: User | null;
@@ -16,6 +12,40 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const IS_EXPO_GO = Constants.appOwnership === "expo";
+
+const DEV_USER = {
+  user: {
+    id: "tradebook-dev-user",
+    name: "TradeBook User",
+    email: "dev@tradebook.local",
+    photo: null,
+    familyName: "User",
+    givenName: "TradeBook",
+  },
+  scopes: [],
+  idToken: null,
+  serverAuthCode: null,
+} as User;
+
+function getGoogleSignin() {
+  if (IS_EXPO_GO) {
+    return null;
+  }
+
+  const module = require("@react-native-google-signin/google-signin");
+
+  return module.GoogleSignin;
+}
+
+function getGoogleAuth() {
+  if (IS_EXPO_GO) {
+    return null;
+  }
+
+  return require("@/utils/googleAuth");
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -28,6 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function checkCurrentUser() {
     try {
+      if (IS_EXPO_GO) {
+        setUser(DEV_USER);
+        return;
+      }
+
+      const GoogleSignin = getGoogleSignin();
+
+      if (!GoogleSignin) {
+        setUser(null);
+        return;
+      }
+
       const currentUser = await GoogleSignin.getCurrentUser();
 
       setUser(currentUser);
@@ -42,7 +84,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setSigningIn(true);
 
-      const result = await signInWithGoogle();
+      if (IS_EXPO_GO) {
+        setUser(DEV_USER);
+        return;
+      }
+
+      const googleAuth = getGoogleAuth();
+
+      if (!googleAuth) {
+        return;
+      }
+
+      const result = await googleAuth.signInWithGoogle();
 
       if (result.success) {
         setUser(result.user);
@@ -54,7 +107,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     try {
-      await signOutFromGoogle();
+      if (IS_EXPO_GO) {
+        setUser(null);
+        return;
+      }
+
+      const googleAuth = getGoogleAuth();
+
+      if (!googleAuth) {
+        setUser(null);
+        return;
+      }
+
+      await googleAuth.signOutFromGoogle();
       setUser(null);
     } catch (error) {
       console.error("Failed to sign out:", error);

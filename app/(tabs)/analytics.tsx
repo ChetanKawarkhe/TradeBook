@@ -58,7 +58,7 @@ function MetricCard({
           color: positive
             ? theme.positive
             : negative
-              ? theme.negative
+              ? theme.primaryDark
               : theme.text,
           fontSize: 20,
           fontWeight: "800",
@@ -189,7 +189,7 @@ function MiniBar({
 
         <Text
           style={{
-            color: positive ? theme.positive : theme.negative,
+            color: positive ? theme.positive : theme.primaryDark,
             fontSize: 12,
             fontWeight: "700",
           }}
@@ -210,7 +210,7 @@ function MiniBar({
           style={{
             width: `${Math.min(width, 100)}%`,
             height: "100%",
-            backgroundColor: positive ? theme.positive : theme.negative,
+            backgroundColor: positive ? theme.positive : theme.primaryDark,
             borderRadius: 99,
           }}
         />
@@ -235,7 +235,7 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
             ? theme.positive
             : score >= 50
               ? theme.primary
-              : theme.negative,
+              : theme.primaryDark,
         alignItems: "center",
         justifyContent: "center",
         alignSelf: "center",
@@ -742,7 +742,7 @@ export default function AnalyticsScreen() {
     },
     {
       value: analytics.badWins,
-      color: theme.negative,
+      color: theme.primaryDark,
       label: "Bad Win",
     },
     {
@@ -1028,7 +1028,7 @@ export default function AnalyticsScreen() {
               {
                 label: "Bad Win",
                 value: analytics.badWins,
-                color: theme.negative,
+                color: theme.primaryDark,
               },
               {
                 label: "Good Loss",
@@ -1156,12 +1156,12 @@ export default function AnalyticsScreen() {
               data={[
                 {
                   value: analytics.wins,
-                  color: theme.positive,
+                  color: theme.primary,
                   text: "Wins",
                 },
                 {
                   value: analytics.losses,
-                  color: theme.negative,
+                  color: theme.positive,
                   text: "Losses",
                 },
               ].filter((item) => item.value > 0)}
@@ -1215,7 +1215,7 @@ export default function AnalyticsScreen() {
               {
                 label: "Losses",
                 value: analytics.losses,
-                color: theme.negative,
+                color: theme.primary,
               },
             ].map((item) => (
               <View
@@ -1342,7 +1342,7 @@ export default function AnalyticsScreen() {
 
                     <Text
                       style={{
-                        color: month.pnl >= 0 ? theme.positive : theme.negative,
+                        color: month.pnl >= 0 ? theme.positive : theme.primary,
                         fontSize: 12,
                         fontWeight: "800",
                       }}
@@ -1364,7 +1364,7 @@ export default function AnalyticsScreen() {
                         width: `${widthPercent}%` as `${number}%`,
                         height: 8,
                         backgroundColor:
-                          month.pnl >= 0 ? theme.positive : theme.negative,
+                          month.pnl >= 0 ? theme.positive : theme.primary,
                         borderRadius: 4,
                       }}
                     />
@@ -1603,7 +1603,7 @@ export default function AnalyticsScreen() {
                       insight.type === "positive"
                         ? theme.positive
                         : insight.type === "warning"
-                          ? theme.negative
+                          ? theme.primaryDark
                           : theme.primary,
                     marginRight: 9,
                   }}
@@ -1791,7 +1791,7 @@ export default function AnalyticsScreen() {
 
               <Text
                 style={{
-                  color: theme.negative,
+                  color: theme.primaryDark,
                   fontSize: 22,
                   fontWeight: "800",
                   marginTop: 4,
@@ -1835,7 +1835,7 @@ export default function AnalyticsScreen() {
 
               <Text
                 style={{
-                  color: theme.negative,
+                  color: theme.primaryDark,
                   fontSize: 22,
                   fontWeight: "800",
                   marginTop: 4,
@@ -1907,11 +1907,14 @@ export default function AnalyticsScreen() {
             style={{
               paddingLeft: 8,
               paddingRight: 8,
+              paddingTop: 10,
+              paddingBottom: 16,
+              overflow: "hidden",
             }}
           >
             <LineChart
               data={analytics.equityData}
-              height={220}
+              height={240}
               width={300}
               spacing={
                 analytics.equityData.length <= 1
@@ -2023,7 +2026,9 @@ export default function AnalyticsScreen() {
                       <Text
                         style={{
                           color:
-                            item.value >= 0 ? theme.positive : theme.negative,
+                            item.value >= 0
+                              ? theme.positive
+                              : theme.primaryDark,
                           fontSize: 16,
                           fontWeight: "800",
                           marginTop: 2,
@@ -2047,7 +2052,7 @@ export default function AnalyticsScreen() {
                             color:
                               originalTrade.pnl >= 0
                                 ? theme.positive
-                                : theme.negative,
+                                : theme.primaryDark,
                             fontSize: 10,
                             fontWeight: "700",
                             marginTop: 3,
@@ -2198,7 +2203,7 @@ export default function AnalyticsScreen() {
                   color:
                     analytics.longStats.pnl >= 0
                       ? theme.positive
-                      : theme.negative,
+                      : theme.primaryDark,
                   fontSize: 21,
                   fontWeight: "800",
                   marginTop: 12,
@@ -2234,7 +2239,11 @@ export default function AnalyticsScreen() {
                   gap: 6,
                 }}
               >
-                <Ionicons name="arrow-down" size={15} color={theme.negative} />
+                <Ionicons
+                  name="arrow-down"
+                  size={15}
+                  color={theme.primaryDark}
+                />
 
                 <Text
                   style={{
@@ -2252,7 +2261,7 @@ export default function AnalyticsScreen() {
                   color:
                     analytics.shortStats.pnl >= 0
                       ? theme.positive
-                      : theme.negative,
+                      : theme.primaryDark,
                   fontSize: 21,
                   fontWeight: "800",
                   marginTop: 12,
@@ -2336,7 +2345,7 @@ export default function AnalyticsScreen() {
 
                 <Text
                   style={{
-                    color: item.pnl >= 0 ? theme.positive : theme.negative,
+                    color: item.pnl >= 0 ? theme.positive : theme.primaryDark,
                     fontSize: 13,
                     fontWeight: "800",
                   }}

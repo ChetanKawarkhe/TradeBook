@@ -1,61 +1,69 @@
-export type AppTheme = {
-  text: string;
-  background: string;
-  tint: string;
-  icon: string;
-  tabIconDefault: string;
-  tabIconSelected: string;
-
-  card: string;
-  cardSecondary: string;
-  border: string;
-
-  primary: string;
-  primaryDark: string;
-  primaryLight: string;
-
-  positive: string;
-  negative: string;
-  textSecondary: string;
-};
-
-export const Colors: Record<'light' | 'dark', AppTheme> = {
+export const Colors = {
   light: {
-    text: '#18181B',
-    background: '#F8F8F7',
-    tint: '#F97316',
-    icon: '#71717A',
-    tabIconDefault: '#71717A',
-    tabIconSelected: '#F97316',
-    card: '#FFFFFF',
-    cardSecondary: '#F3F3F1',
-    border: '#E4E4E7',
-    primary: '#F97316',
-    primaryDark: '#EA580C',
-    primaryLight: '#FFF7ED',
-    positive: '#16A34A',
-    negative: '#DC2626',
-    textSecondary: '#71717A',
-  },
+    background: "#F7F7F5",
+    card: "#FFFFFF",
+    cardSecondary: "#F1F1EE",
+    
+    text: "#171717",
+    textSecondary: "#6B6B6B",
+    textMuted: "#929292",
+    
+    border: "#E3E3DF",
+    
+    primary: "#E8751A",
+    primaryDark: "#C95D0B",
+    primaryLight: "#FFF1E6",
+    
+    positive: "#16A34A",
+    positiveLight: "#EAF7EE",
+    
+    negative: "#DC2626",
+    negativeLight: "#FDECEC",
+    
+    warning: "#D97706",
+    warningLight: "#FFF4E5",
+    
+    neutral: "#737373",
+    neutralLight: "#F0F0F0",
+    
+    surface: "#FFFFFF",
+    surfaceSecondary: "#F1F1EE",
 
+    tabIconDefault: "#8A8A86",
+  },
+  
   dark: {
-    text: '#FAFAFA',
-    background: '#0D0D0E',
-    tint: '#F97316',
-    icon: '#A1A1AA',
-    tabIconDefault: '#A1A1AA',
-    tabIconSelected: '#F97316',
-    card: '#171719',
-    cardSecondary: '#202023',
-    border: '#2A2A2E',
-    primary: '#F97316',
-    primaryDark: '#EA580C',
-    primaryLight: '#7C2D12',
-    positive: '#4ADE80',
-    negative: '#F87171',
-    textSecondary: '#A1A1AA',
+    background: "#101110",
+    card: "#181A18",
+    cardSecondary: "#202220",
+
+    text: "#F5F5F3",
+    textSecondary: "#B3B3AF",
+    textMuted: "#777772",
+
+    border: "#30322F",
+
+    primary: "#F28A32",
+    primaryDark: "#D86D18",
+    primaryLight: "#3A2517",
+
+    positive: "#4ADE80",
+    positiveLight: "#14291B",
+
+    negative: "#F87171",
+    negativeLight: "#32191A",
+
+    warning: "#FBBF24",
+    warningLight: "#302611",
+
+    neutral: "#A3A3A3",
+    neutralLight: "#292A28",
+
+    surface: "#181A18",
+    surfaceSecondary: "#202220",
+
+    tabIconDefault: "#8B8B86",
   },
 };
 
-export const lightTheme = Colors.light;
-export const darkTheme = Colors.dark;
+export type AppTheme = typeof Colors.light;

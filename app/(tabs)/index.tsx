@@ -63,7 +63,9 @@ function StatCard({
         {label}
       </Text>
 
-      <Text style={{ ...styles.statValue, color: theme.text }}>{value}</Text>
+      <Text style={{ ...styles.statValue, color: theme.text }}>
+        {value}
+      </Text>
     </View>
   );
 }
@@ -81,7 +83,9 @@ function SectionHeader({
 }) {
   return (
     <View style={styles.sectionHeader}>
-      <Text style={{ ...styles.sectionTitle, color: theme.text }}>{title}</Text>
+      <Text style={{ ...styles.sectionTitle, color: theme.text }}>
+        {title}
+      </Text>
 
       {action && onPress ? (
         <TouchableOpacity onPress={onPress}>
@@ -154,7 +158,7 @@ function TradeRow({
         <Text
           style={{
             ...styles.tradePnl,
-            color: positive ? theme.positive : theme.negative,
+            color: positive ? theme.positive : theme.primaryDark,
           }}
         >
           {formatCurrency(trade.pnl)}
@@ -337,7 +341,6 @@ export default function HomeScreen() {
       </View>
 
       {/* Calendar */}
-      {/* Calendar */}
       <SectionHeader
         title="P&L Calendar"
         action="View all"
@@ -397,7 +400,7 @@ export default function HomeScreen() {
                     backgroundColor: hasTrade
                       ? pnl >= 0
                         ? theme.primaryLight
-                        : `${theme.negative}18`
+                        : `${theme.primaryDark}18`
                       : "transparent",
                   }}
                 >
@@ -407,7 +410,7 @@ export default function HomeScreen() {
                       color: hasTrade
                         ? pnl >= 0
                           ? theme.positive
-                          : theme.negative
+                          : theme.primaryDark
                         : theme.textSecondary,
                     }}
                   >
@@ -419,7 +422,7 @@ export default function HomeScreen() {
                       numberOfLines={1}
                       style={{
                         ...styles.dayPnl,
-                        color: pnl >= 0 ? theme.positive : theme.negative,
+                        color: pnl >= 0 ? theme.positive : theme.primaryDark,
                       }}
                     >
                       {formatCompactPnl(pnl)}
@@ -441,7 +444,7 @@ export default function HomeScreen() {
           backgroundColor: theme.cardSecondary,
         }}
       >
-        <Text style={{ ...styles.insightEmoji }}>💡</Text>
+        <Text style={styles.insightEmoji}>💡</Text>
 
         <View style={styles.insightContent}>
           <Text style={{ ...styles.insightTitle, color: theme.text }}>
@@ -489,7 +492,7 @@ export default function HomeScreen() {
             borderColor: theme.border,
           }}
         >
-          <Text style={{ ...styles.emptyEmoji }}>📈</Text>
+          <Text style={styles.emptyEmoji}>📈</Text>
 
           <Text style={{ ...styles.emptyTitle, color: theme.text }}>
             No trades yet
@@ -592,10 +595,11 @@ const styles = {
   } satisfies ViewStyle,
 
   pnlLabel: {
-    color: "rgba(255,255,255,0.78)",
+    color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "800",
     letterSpacing: 1.2,
+    opacity: 0.78,
   } satisfies TextStyle,
 
   pnlValue: {
@@ -607,9 +611,10 @@ const styles = {
   } satisfies TextStyle,
 
   pnlSubtext: {
-    color: "rgba(255,255,255,0.78)",
+    color: "#FFFFFF",
     fontSize: 13,
     marginTop: 5,
+    opacity: 0.78,
   } satisfies TextStyle,
 
   statsGrid: {

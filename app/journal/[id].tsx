@@ -235,7 +235,7 @@ export default function JournalEntryDetailScreen() {
               justifyContent: "center",
             }}
           >
-            <Ionicons name="trash-outline" size={19} color={theme.negative} />
+            <Ionicons name="trash-outline" size={19} color={theme.primaryDark} />
           </Pressable>
         </View>
       </View>
@@ -442,7 +442,7 @@ export default function JournalEntryDetailScreen() {
 
                   <Text
                     style={{
-                      color: trade.pnl >= 0 ? theme.positive : theme.negative,
+                      color: trade.pnl >= 0 ? theme.positive : theme.primaryDark,
                       fontSize: 13,
                       fontWeight: "800",
                     }}

@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -10,41 +9,24 @@ import {
   View,
 } from "react-native";
 
-
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useJournal } from "@/store/JournalProvider";
 import { useTrades } from "@/store/TradeProvider";
 import type { Trade } from "@/types/trade";
+import { exportTradesToExcel, exportTradesToPdf } from "@/utils/exportTrades";
 import { formatCurrency } from "@/utils/trade";
 import { getTradeResultType } from "@/utils/tradeResult";
-
-import {
-  exportTradesToExcel,
-  exportTradesToPdf,
-} from "@/utils/exportTrades";
 
 type ResultFilter = "ALL" | "WINS" | "LOSSES";
 type DirectionFilter = "ALL" | "LONG" | "SHORT";
 type SortOption = "NEWEST" | "OLDEST" | "BEST" | "WORST";
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 export default function TradesScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme === "dark" ? "dark" : "light"];
 
-  const { trades, loading, deleteTrade, replaceTrades } = useTrades();
-
-  const { entries, rules, replaceEntries, replaceRules } = useJournal();
+  const { trades, loading } = useTrades();
 
   const [search, setSearch] = useState("");
   const [resultFilter, setResultFilter] = useState<ResultFilter>("ALL");
@@ -56,7 +38,6 @@ export default function TradesScreen() {
 
   const [filterOpen, setFilterOpen] = useState(false);
 
-  // Temporary values used inside the bottom sheet.
   const [draftDirection, setDraftDirection] = useState<DirectionFilter>("ALL");
 
   const [draftSort, setDraftSort] = useState<SortOption>("NEWEST");
@@ -121,6 +102,7 @@ export default function TradesScreen() {
   );
 
   const wins = filteredTrades.filter((trade) => trade.pnl > 0).length;
+
   const losses = filteredTrades.filter((trade) => trade.pnl < 0).length;
 
   function openFilters() {
@@ -237,7 +219,7 @@ export default function TradesScreen() {
             }}
           >
             <Pressable
-              onPress={()=> exportTradesToExcel(trades)}
+              onPress={() => exportTradesToExcel(trades)}
               style={{
                 backgroundColor: theme.card,
                 borderWidth: 1,
@@ -259,7 +241,7 @@ export default function TradesScreen() {
             </Pressable>
 
             <Pressable
-              onPress={()=> exportTradesToPdf(trades)}
+              onPress={() => exportTradesToPdf(trades)}
               style={{
                 backgroundColor: theme.card,
                 borderWidth: 1,
@@ -302,7 +284,7 @@ export default function TradesScreen() {
           </View>
         </View>
 
-        {/* Compact Summary */}
+        {/* Summary */}
         <View
           style={{
             backgroundColor: theme.card,
@@ -313,97 +295,79 @@ export default function TradesScreen() {
             marginBottom: 14,
           }}
         >
-          <Text
+          <View
             style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              fontWeight: "700",
-              letterSpacing: 1,
+              flexDirection: "row",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
             }}
           >
-            {hasSearchOrFilter ? "FILTERED P&L" : "TOTAL P&L"}
-          </Text>
+            <View>
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  letterSpacing: 1,
+                }}
+              >
+                {hasSearchOrFilter ? "FILTERED P&L" : "TOTAL P&L"}
+              </Text>
 
-          <Text
-            style={{
-              color: totalPnl >= 0 ? theme.positive : theme.negative,
-              fontSize: 27,
-              fontWeight: "800",
-              marginTop: 3,
-            }}
-          >
-            {formatCurrency(totalPnl)}
-          </Text>
+              <Text
+                style={{
+                  color: totalPnl >= 0 ? theme.positive : theme.primaryDark,
+                  fontSize: 28,
+                  fontWeight: "800",
+                  marginTop: 3,
+                  letterSpacing: -0.5,
+                }}
+              >
+                {formatCurrency(totalPnl)}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+                backgroundColor:
+                  totalPnl >= 0 ? theme.positive : theme.primaryDark,
+                marginTop: 5,
+              }}
+            />
+          </View>
 
           <View
             style={{
               flexDirection: "row",
-              marginTop: 14,
-              gap: 24,
+              marginTop: 16,
+              paddingTop: 14,
+              borderTopWidth: 1,
+              borderTopColor: theme.border,
+              gap: 28,
             }}
           >
-            <View>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Trades
-              </Text>
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 16,
-                  fontWeight: "700",
-                  marginTop: 2,
-                }}
-              >
-                {filteredTrades.length}
-              </Text>
-            </View>
+            <SummaryMetric
+              label="Trades"
+              value={String(filteredTrades.length)}
+              theme={theme}
+            />
 
-            <View>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Wins
-              </Text>
-              <Text
-                style={{
-                  color: theme.positive,
-                  fontSize: 16,
-                  fontWeight: "700",
-                  marginTop: 2,
-                }}
-              >
-                {wins}
-              </Text>
-            </View>
+            <SummaryMetric
+              label="Wins"
+              value={String(wins)}
+              valueColor={theme.positive}
+              theme={theme}
+            />
 
-            <View>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Losses
-              </Text>
-              <Text
-                style={{
-                  color: theme.negative,
-                  fontSize: 16,
-                  fontWeight: "700",
-                  marginTop: 2,
-                }}
-              >
-                {losses}
-              </Text>
-            </View>
+            <SummaryMetric
+              label="Losses"
+              value={String(losses)}
+              valueColor={theme.primaryDark}
+              theme={theme}
+            />
           </View>
         </View>
 
@@ -591,193 +555,246 @@ export default function TradesScreen() {
             )}
           </View>
         ) : (
-          <View style={{ gap: 10 }}>
-            {filteredTrades.map((trade) => (
-              <Pressable
-                key={trade.id}
-                onPress={() => goToTrade(trade)}
-                style={{
-                  backgroundColor: theme.card,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                  borderRadius: 18,
-                  padding: 16,
-                }}
-              >
-                {/* Top row */}
-                <View
+          <View style={{ gap: 11 }}>
+            {filteredTrades.map((trade) => {
+              const isWin = trade.pnl > 0;
+              const isLoss = trade.pnl < 0;
+              const resultType = getTradeResultType(trade);
+
+              const resultColor = isWin
+                ? theme.positive
+                : isLoss
+                  ? theme.primaryDark
+                  : theme.textSecondary;
+
+              const resultBackground = isWin
+                ? theme.positiveLight
+                : isLoss
+                  ? theme.primaryLight
+                  : theme.cardSecondary;
+
+              return (
+                <Pressable
+                  key={trade.id}
+                  onPress={() => goToTrade(trade)}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
+                    backgroundColor: theme.card,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 20,
+                    overflow: "hidden",
                   }}
                 >
                   <View
                     style={{
-                      flex: 1,
-                      paddingRight: 10,
+                      flexDirection: "row",
                     }}
                   >
+                    {/* Brand accent */}
                     <View
                       style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 7,
+                        width: 4,
+                        backgroundColor: theme.primary,
                       }}
-                    >
-                      <Text
-                        style={{
-                          color: theme.text,
-                          fontSize: 17,
-                          fontWeight: "800",
-                        }}
-                      >
-                        {trade.instrument}
-                      </Text>
-
-                      <View
-                        style={{
-                          backgroundColor:
-                            trade.direction === "LONG"
-                              ? theme.primaryLight
-                              : theme.cardSecondary,
-                          borderRadius: 7,
-                          paddingHorizontal: 7,
-                          paddingVertical: 3,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color:
-                              trade.direction === "LONG"
-                                ? theme.primary
-                                : theme.textSecondary,
-                            fontSize: 10,
-                            fontWeight: "800",
-                          }}
-                        >
-                          {trade.direction}
-                        </Text>
-                      </View>
-                    </View>
+                    />
 
                     <View
                       style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: 6,
-                        marginTop: 5,
+                        flex: 1,
+                        padding: 16,
                       }}
                     >
-                      <Text
-                        style={{
-                          color: theme.textSecondary,
-                          fontSize: 12,
-                        }}
-                      >
-                        {trade.strategy || "No strategy"} ·{" "}
-                        {formatDate(trade.exitTime)}
-                      </Text>
-
+                      {/* Main row */}
                       <View
                         style={{
-                          backgroundColor:
-                            trade.pnl > 0
-                              ? trade.followedPlan
-                                ? theme.primaryLight
-                                : theme.cardSecondary
-                              : trade.pnl < 0
-                                ? trade.followedPlan
-                                  ? theme.cardSecondary
-                                  : theme.primaryLight
-                                : theme.cardSecondary,
-                          borderRadius: 7,
-                          paddingHorizontal: 7,
-                          paddingVertical: 3,
+                          flexDirection: "row",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
                         }}
                       >
-                        <Text
+                        <View
                           style={{
-                            color:
-                              trade.pnl > 0 && trade.followedPlan
-                                ? theme.positive
-                                : trade.pnl < 0 && trade.followedPlan
-                                  ? theme.textSecondary
-                                  : trade.pnl === 0
-                                    ? theme.textSecondary
-                                    : theme.negative,
-                            fontSize: 10,
-                            fontWeight: "800",
+                            flex: 1,
+                            paddingRight: 12,
                           }}
                         >
-                          {getTradeResultType(trade)}
-                        </Text>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                              gap: 7,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: theme.text,
+                                fontSize: 19,
+                                fontWeight: "800",
+                                letterSpacing: -0.3,
+                              }}
+                            >
+                              {trade.instrument}
+                            </Text>
+
+                            <View
+                              style={{
+                                backgroundColor:
+                                  trade.direction === "LONG"
+                                    ? theme.primaryLight
+                                    : theme.cardSecondary,
+                                borderRadius: 8,
+                                paddingHorizontal: 8,
+                                paddingVertical: 4,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color:
+                                    trade.direction === "LONG"
+                                      ? theme.primary
+                                      : theme.textSecondary,
+                                  fontSize: 10,
+                                  fontWeight: "800",
+                                  letterSpacing: 0.4,
+                                }}
+                              >
+                                {trade.direction}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <Text
+                            style={{
+                              color: theme.textSecondary,
+                              fontSize: 12,
+                              marginTop: 5,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {trade.strategy || "No strategy"}
+                            {"  ·  "}
+                            {formatDate(trade.exitTime)}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={{
+                            alignItems: "flex-end",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: resultColor,
+                              fontSize: 19,
+                              fontWeight: "800",
+                              letterSpacing: -0.3,
+                            }}
+                          >
+                            {formatCurrency(trade.pnl)}
+                          </Text>
+
+                          <View
+                            style={{
+                              backgroundColor: resultBackground,
+                              borderRadius: 8,
+                              paddingHorizontal: 8,
+                              paddingVertical: 4,
+                              marginTop: 5,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: resultColor,
+                                fontSize: 9,
+                                fontWeight: "800",
+                              }}
+                            >
+                              {resultType.toUpperCase()}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      {/* Trade details */}
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          marginTop: 16,
+                          paddingTop: 13,
+                          borderTopWidth: 1,
+                          borderTopColor: theme.border,
+                        }}
+                      >
+                        <TradeMetric
+                          label="Entry"
+                          value={trade.entryPrice.toLocaleString("en-IN")}
+                          theme={theme}
+                        />
+
+                        <View
+                          style={{
+                            width: 1,
+                            backgroundColor: theme.border,
+                            marginHorizontal: 18,
+                          }}
+                        />
+
+                        <TradeMetric
+                          label="Exit"
+                          value={trade.exitPrice.toLocaleString("en-IN")}
+                          theme={theme}
+                        />
+
+                        <View
+                          style={{
+                            width: 1,
+                            backgroundColor: theme.border,
+                            marginHorizontal: 18,
+                          }}
+                        />
+
+                        <TradeMetric
+                          label="Qty"
+                          value={String(trade.quantity)}
+                          theme={theme}
+                        />
+
+                        <View
+                          style={{
+                            marginLeft: "auto",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <View
+                            style={{
+                              backgroundColor: trade.followedPlan
+                                ? theme.positiveLight
+                                : theme.primaryLight,
+                              borderRadius: 8,
+                              paddingHorizontal: 8,
+                              paddingVertical: 5,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: trade.followedPlan
+                                  ? theme.positive
+                                  : theme.primaryDark,
+                                fontSize: 10,
+                                fontWeight: "800",
+                              }}
+                            >
+                              {trade.followedPlan ? "✓ PLAN" : "✕ PLAN"}
+                            </Text>
+                          </View>
+                        </View>
                       </View>
                     </View>
                   </View>
-
-                  <Text
-                    style={{
-                      color: trade.pnl >= 0 ? theme.positive : theme.negative,
-                      fontSize: 17,
-                      fontWeight: "800",
-                    }}
-                  >
-                    {formatCurrency(trade.pnl)}
-                  </Text>
-                </View>
-
-                {/* Details */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    marginTop: 15,
-                    paddingTop: 12,
-                    borderTopWidth: 1,
-                    borderTopColor: theme.border,
-                    gap: 24,
-                  }}
-                >
-                  <TradeMetric
-                    label="Entry"
-                    value={trade.entryPrice.toLocaleString("en-IN")}
-                    theme={theme}
-                  />
-
-                  <TradeMetric
-                    label="Exit"
-                    value={trade.exitPrice.toLocaleString("en-IN")}
-                    theme={theme}
-                  />
-
-                  <TradeMetric
-                    label="Qty"
-                    value={String(trade.quantity)}
-                    theme={theme}
-                  />
-
-                  <View
-                    style={{
-                      marginLeft: "auto",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: trade.followedPlan
-                          ? theme.positive
-                          : theme.negative,
-                        fontSize: 11,
-                        fontWeight: "700",
-                      }}
-                    >
-                      {trade.followedPlan ? "✓ Plan" : "✕ Plan"}
-                    </Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -813,7 +830,6 @@ export default function TradesScreen() {
               paddingBottom: 30,
             }}
           >
-            {/* Handle */}
             <View
               style={{
                 width: 40,
@@ -825,7 +841,6 @@ export default function TradesScreen() {
               }}
             />
 
-            {/* Sheet header */}
             <View
               style={{
                 flexDirection: "row",
@@ -857,7 +872,6 @@ export default function TradesScreen() {
               </Pressable>
             </View>
 
-            {/* Direction */}
             <Text
               style={{
                 color: theme.text,
@@ -898,7 +912,6 @@ export default function TradesScreen() {
               />
             </View>
 
-            {/* Sort */}
             <Text
               style={{
                 color: theme.text,
@@ -947,7 +960,6 @@ export default function TradesScreen() {
               />
             </View>
 
-            {/* Actions */}
             <View
               style={{
                 flexDirection: "row",
@@ -1003,6 +1015,42 @@ export default function TradesScreen() {
           </View>
         </View>
       </Modal>
+    </View>
+  );
+}
+
+function SummaryMetric({
+  label,
+  value,
+  valueColor,
+  theme,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+  theme: typeof Colors.light;
+}) {
+  return (
+    <View>
+      <Text
+        style={{
+          color: theme.textSecondary,
+          fontSize: 12,
+        }}
+      >
+        {label}
+      </Text>
+
+      <Text
+        style={{
+          color: valueColor ?? theme.text,
+          fontSize: 16,
+          fontWeight: "800",
+          marginTop: 2,
+        }}
+      >
+        {value}
+      </Text>
     </View>
   );
 }

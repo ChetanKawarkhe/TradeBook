@@ -170,7 +170,7 @@ export default function TradeDetailScreen() {
             <Text
               style={{
                 ...styles.deleteIcon,
-                color: theme.negative,
+                color: theme.primaryDark,
               }}
             >
               ×
@@ -241,7 +241,7 @@ export default function TradeDetailScreen() {
             <Text
               style={{
                 ...styles.pnlValue,
-                color: positive ? theme.positive : theme.negative,
+                color: positive ? theme.positive : theme.primaryDark,
               }}
             >
               {formatCurrency(trade.pnl)}
@@ -267,7 +267,7 @@ export default function TradeDetailScreen() {
             <Text
               style={{
                 ...styles.resultEmoji,
-                color: positive ? theme.positive : theme.negative,
+                color: positive ? theme.positive : theme.primaryDark,
               }}
             >
               {positive ? "✓" : "!"}
@@ -287,7 +287,7 @@ export default function TradeDetailScreen() {
             <Text
               style={{
                 ...styles.resultTitle,
-                color: positive ? theme.positive : theme.negative,
+                color: positive ? theme.positive : theme.primaryDark,
               }}
             >
               {resultType}
@@ -381,7 +381,7 @@ export default function TradeDetailScreen() {
                   <Text
                     style={{
                       ...styles.qualityCheck,
-                      color: isNegative ? theme.negative : theme.positive,
+                      color: isNegative ? theme.primaryDark : theme.positive,
                     }}
                   >
                     {isNegative ? "!" : "✓"}
@@ -547,7 +547,7 @@ export default function TradeDetailScreen() {
           <Text
             style={{
               ...styles.deleteButtonText,
-              color: theme.negative,
+              color: theme.primaryDark,
             }}
           >
             Delete Trade
