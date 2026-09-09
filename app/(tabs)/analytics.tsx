@@ -44,16 +44,19 @@ function MetricCard({
       }}
     >
       <Text
+        numberOfLines={1}
         style={{
           color: theme.textSecondary,
-          fontSize: 11,
-          fontWeight: "600",
+          fontSize: 10,
+          fontWeight: "700",
         }}
       >
         {label}
       </Text>
 
       <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
         style={{
           color: positive
             ? theme.positive
@@ -62,7 +65,7 @@ function MetricCard({
               : theme.text,
           fontSize: 20,
           fontWeight: "800",
-          marginTop: 5,
+          marginTop: 6,
         }}
       >
         {value}
@@ -70,6 +73,7 @@ function MetricCard({
 
       {subtext ? (
         <Text
+          numberOfLines={1}
           style={{
             color: theme.textSecondary,
             fontSize: 10,
@@ -104,7 +108,12 @@ function SectionHeader({
         marginBottom: 12,
       }}
     >
-      <View style={{ flex: 1 }}>
+      <View
+        style={{
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
         <Text
           style={{
             color: theme.text,
@@ -133,88 +142,22 @@ function SectionHeader({
           onPress={onInfo}
           hitSlop={10}
           style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
             backgroundColor: theme.cardSecondary,
             alignItems: "center",
             justifyContent: "center",
+            marginLeft: 10,
           }}
         >
           <Ionicons
             name="information-outline"
-            size={16}
+            size={17}
             color={theme.textSecondary}
           />
         </Pressable>
       ) : null}
-    </View>
-  );
-}
-
-function MiniBar({
-  label,
-  value,
-  max,
-  positive,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  positive?: boolean;
-}) {
-  const scheme = useColorScheme();
-  const theme = Colors[scheme ?? "light"];
-
-  const width = max > 0 ? Math.max(4, (Math.abs(value) / max) * 100) : 4;
-
-  return (
-    <View style={{ marginBottom: 13 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginBottom: 6,
-        }}
-      >
-        <Text
-          style={{
-            color: theme.text,
-            fontSize: 12,
-            fontWeight: "600",
-          }}
-        >
-          {label}
-        </Text>
-
-        <Text
-          style={{
-            color: positive ? theme.positive : theme.primaryDark,
-            fontSize: 12,
-            fontWeight: "700",
-          }}
-        >
-          {formatCurrency(value)}
-        </Text>
-      </View>
-
-      <View
-        style={{
-          height: 8,
-          borderRadius: 99,
-          backgroundColor: theme.cardSecondary,
-          overflow: "hidden",
-        }}
-      >
-        <View
-          style={{
-            width: `${Math.min(width, 100)}%`,
-            height: "100%",
-            backgroundColor: positive ? theme.positive : theme.primaryDark,
-            borderRadius: 99,
-          }}
-        />
-      </View>
     </View>
   );
 }
@@ -226,10 +169,10 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
   return (
     <View
       style={{
-        width: 150,
-        height: 150,
-        borderRadius: 75,
-        borderWidth: 12,
+        width: 132,
+        height: 132,
+        borderRadius: 66,
+        borderWidth: 10,
         borderColor:
           score >= 75
             ? theme.positive
@@ -238,13 +181,12 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
               : theme.primaryDark,
         alignItems: "center",
         justifyContent: "center",
-        alignSelf: "center",
       }}
     >
       <Text
         style={{
           color: theme.text,
-          fontSize: 42,
+          fontSize: 34,
           fontWeight: "900",
         }}
       >
@@ -254,9 +196,9 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
       <Text
         style={{
           color: theme.textSecondary,
-          fontSize: 11,
-          fontWeight: "600",
-          marginTop: -4,
+          fontSize: 10,
+          fontWeight: "700",
+          marginTop: -3,
         }}
       >
         {label}
@@ -347,6 +289,7 @@ export default function AnalyticsScreen() {
     const totalPnl = trades.reduce((sum, trade) => sum + trade.pnl, 0);
 
     const wins = trades.filter((trade) => trade.pnl > 0);
+
     const losses = trades.filter((trade) => trade.pnl < 0);
 
     const goodWins = trades.filter(
@@ -398,7 +341,6 @@ export default function AnalyticsScreen() {
     const planRate =
       trades.length > 0 ? (followedPlanCount / trades.length) * 100 : 0;
 
-    // Equity + drawdown
     let equity = 0;
     let peak = 0;
     let maxDrawdown = 0;
@@ -406,6 +348,7 @@ export default function AnalyticsScreen() {
 
     const equityData = sortedTrades.map((trade, index) => {
       equity += trade.pnl;
+
       peak = Math.max(peak, equity);
 
       currentDrawdown = equity - peak;
@@ -444,7 +387,9 @@ export default function AnalyticsScreen() {
               }
             });
 
-            if (drawdownIndex < 0) return 0;
+            if (drawdownIndex < 0) {
+              return 0;
+            }
 
             const drawdownPeak = equityData[drawdownIndex]?.value - maxDrawdown;
 
@@ -462,11 +407,17 @@ export default function AnalyticsScreen() {
           })()
         : 0;
 
-    // Monthly
-    const monthlyMap: Record<string, { pnl: number; trades: number }> = {};
+    const monthlyMap: Record<
+      string,
+      {
+        pnl: number;
+        trades: number;
+      }
+    > = {};
 
     trades.forEach((trade) => {
       const date = new Date(trade.exitTime);
+
       const key = getMonthKey(date);
 
       if (!monthlyMap[key]) {
@@ -477,6 +428,7 @@ export default function AnalyticsScreen() {
       }
 
       monthlyMap[key].pnl += trade.pnl;
+
       monthlyMap[key].trades += 1;
     });
 
@@ -489,7 +441,6 @@ export default function AnalyticsScreen() {
         ...value,
       }));
 
-    // Direction
     const longTrades = trades.filter((trade) => trade.direction === "LONG");
 
     const shortTrades = trades.filter((trade) => trade.direction === "SHORT");
@@ -506,10 +457,13 @@ export default function AnalyticsScreen() {
       };
     }
 
-    // Emotions
     const emotionMap: Record<
       string,
-      { trades: number; pnl: number; wins: number }
+      {
+        trades: number;
+        pnl: number;
+        wins: number;
+      }
     > = {};
 
     trades.forEach((trade) => {
@@ -524,6 +478,7 @@ export default function AnalyticsScreen() {
       }
 
       emotionMap[emotion].trades += 1;
+
       emotionMap[emotion].pnl += trade.pnl;
 
       if (trade.pnl > 0) {
@@ -539,13 +494,8 @@ export default function AnalyticsScreen() {
       }))
       .sort((a, b) => b.pnl - a.pnl);
 
-    // Behavioral stats
     const confidenceValues = trades
       .map((trade) => trade.confidence)
-      .filter((value): value is number => typeof value === "number");
-
-    const stressValues = trades
-      .map((trade) => trade.stress)
       .filter((value): value is number => typeof value === "number");
 
     const fomoValues = trades
@@ -566,17 +516,14 @@ export default function AnalyticsScreen() {
         ? ((trades.length - badTrades.length) / trades.length) * 100
         : 0;
 
-    // Trader Score
-    //
-    // 30% plan adherence
-    // 25% win rate
-    // 20% expectancy quality
-    // 15% discipline
-    // 10% emotional control
     const expectancyScore =
       expectancy > 0
         ? Math.min(100, 50 + (expectancy / Math.max(averageWin, 1)) * 50)
         : 0;
+
+    const stressValues = trades
+      .map((trade) => trade.stress)
+      .filter((value): value is number => typeof value === "number");
 
     const emotionalControl =
       stressValues.length > 0
@@ -586,7 +533,7 @@ export default function AnalyticsScreen() {
           )
         : 70;
 
-    const traderScore = Math.round(
+    const calculatedTraderScore = Math.round(
       planRate * 0.3 +
         winRate * 0.25 +
         expectancyScore * 0.2 +
@@ -624,16 +571,17 @@ export default function AnalyticsScreen() {
       monthlyPerformance,
 
       longStats: directionStats(longTrades),
+
       shortStats: directionStats(shortTrades),
 
       emotionPerformance,
 
       averageConfidence: average(confidenceValues),
-      averageStress: average(stressValues),
+
       averageFomo: average(fomoValues),
 
       disciplineRate,
-      traderScore,
+      calculatedTraderScore,
     };
   }, [trades]);
 
@@ -645,9 +593,60 @@ export default function AnalyticsScreen() {
           backgroundColor: theme.background,
           alignItems: "center",
           justifyContent: "center",
+          padding: 24,
         }}
       >
-        <Text style={{ color: theme.textSecondary }}>Loading analytics...</Text>
+        <View
+          style={{
+            width: "100%",
+            maxWidth: 320,
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 24,
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 16,
+              backgroundColor: theme.primaryLight,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 14,
+            }}
+          >
+            <Ionicons
+              name="analytics-outline"
+              size={23}
+              color={theme.primary}
+            />
+          </View>
+
+          <Text
+            style={{
+              color: theme.text,
+              fontSize: 17,
+              fontWeight: "800",
+            }}
+          >
+            Loading analytics
+          </Text>
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 12,
+              textAlign: "center",
+              marginTop: 5,
+            }}
+          >
+            Preparing your trading insights...
+          </Text>
+        </View>
       </View>
     );
   }
@@ -706,7 +705,7 @@ export default function AnalyticsScreen() {
           onPress={() => router.push("/(tabs)/add")}
           style={{
             marginTop: 22,
-            height: 50,
+            minHeight: 50,
             paddingHorizontal: 24,
             borderRadius: 14,
             backgroundColor: theme.primary,
@@ -762,6 +761,22 @@ export default function AnalyticsScreen() {
     },
   ].filter((item) => item.value > 0);
 
+  const healthScore = Math.round(
+    traderScore.planAdherence * 0.35 +
+      traderScore.consistency * 0.3 +
+      traderScore.journaling * 0.2 +
+      ((analytics.goodWins + analytics.goodLosses) /
+        Math.max(
+          analytics.goodWins +
+            analytics.badWins +
+            analytics.goodLosses +
+            analytics.badLosses,
+          1,
+        )) *
+        100 *
+        0.15,
+  );
+
   return (
     <>
       <ScrollView
@@ -773,7 +788,11 @@ export default function AnalyticsScreen() {
         }}
       >
         {/* Header */}
-        <View style={{ marginBottom: 22 }}>
+        <View
+          style={{
+            marginBottom: 20,
+          }}
+        >
           <Text
             style={{
               color: theme.text,
@@ -801,7 +820,7 @@ export default function AnalyticsScreen() {
             backgroundColor: theme.card,
             borderColor: theme.border,
             borderWidth: 1,
-            borderRadius: 20,
+            borderRadius: 22,
             padding: 18,
             marginBottom: 16,
           }}
@@ -809,16 +828,21 @@ export default function AnalyticsScreen() {
           <View
             style={{
               flexDirection: "row",
-              justifyContent: "space-between",
               alignItems: "center",
             }}
           >
-            <View>
+            <View
+              style={{
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
               <Text
                 style={{
                   color: theme.textSecondary,
-                  fontSize: 12,
-                  fontWeight: "700",
+                  fontSize: 11,
+                  fontWeight: "800",
+                  letterSpacing: 0.8,
                 }}
               >
                 TRADER SCORE
@@ -827,9 +851,9 @@ export default function AnalyticsScreen() {
               <Text
                 style={{
                   color: theme.text,
-                  fontSize: 28,
-                  fontWeight: "800",
-                  marginTop: 4,
+                  fontSize: 29,
+                  fontWeight: "900",
+                  marginTop: 5,
                 }}
               >
                 {traderScore.overall}
@@ -843,34 +867,27 @@ export default function AnalyticsScreen() {
                   /100
                 </Text>
               </Text>
-            </View>
 
-            <View
-              style={{
-                width: 58,
-                height: 58,
-                borderRadius: 29,
-                backgroundColor: theme.primaryLight,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
               <Text
                 style={{
-                  color: theme.primary,
-                  fontSize: 20,
-                  fontWeight: "800",
+                  color: theme.textSecondary,
+                  fontSize: 11,
+                  lineHeight: 16,
+                  marginTop: 5,
+                  paddingRight: 12,
                 }}
               >
                 {traderScore.overall >= 80
-                  ? "A"
+                  ? "Excellent trading discipline. Keep protecting the process."
                   : traderScore.overall >= 65
-                    ? "B"
+                    ? "Good progress. Focus on consistency and following your plan."
                     : traderScore.overall >= 50
-                      ? "C"
-                      : "D"}
+                      ? "Your process has room to improve. Focus on discipline before increasing risk."
+                      : "Build stronger trading habits. Follow your plan and document every trade."}
               </Text>
             </View>
+
+            <ScoreRing score={traderScore.overall} label="SCORE" />
           </View>
 
           <View
@@ -905,7 +922,7 @@ export default function AnalyticsScreen() {
                   backgroundColor: theme.cardSecondary,
                   borderRadius: 12,
                   paddingVertical: 10,
-                  paddingHorizontal: 6,
+                  paddingHorizontal: 5,
                   alignItems: "center",
                 }}
               >
@@ -933,26 +950,236 @@ export default function AnalyticsScreen() {
               </View>
             ))}
           </View>
-
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              lineHeight: 16,
-              marginTop: 14,
-            }}
-          >
-            {traderScore.overall >= 80
-              ? "Excellent trading discipline. Keep protecting the process."
-              : traderScore.overall >= 65
-                ? "Good progress. Focus on consistency and following your plan."
-                : traderScore.overall >= 50
-                  ? "Your process has room to improve. Focus on discipline before increasing risk."
-                  : "Build stronger trading habits. Follow your plan and document every trade."}
-          </Text>
         </View>
 
-        {/* Trade Quality Donut */}
+        {/* Key Performance */}
+        <SectionHeader
+          title="Key Performance"
+          subtitle="The numbers that matter most at a glance."
+        />
+
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 10,
+            marginBottom: 16,
+          }}
+        >
+          <MetricCard
+            label="TOTAL P&L"
+            value={formatCurrency(analytics.totalPnl)}
+            positive={analytics.totalPnl >= 0}
+            negative={analytics.totalPnl < 0}
+            subtext={`${trades.length} trades`}
+          />
+
+          <MetricCard
+            label="WIN RATE"
+            value={`${analytics.winRate.toFixed(1)}%`}
+            positive={analytics.winRate >= 50}
+            negative={analytics.winRate < 40}
+            subtext={`${analytics.wins}W / ${analytics.losses}L`}
+          />
+
+          <MetricCard
+            label="AVG WIN"
+            value={formatCurrency(analytics.averageWin)}
+            positive
+          />
+
+          <MetricCard
+            label="AVG LOSS"
+            value={formatCurrency(-analytics.averageLoss)}
+            negative
+          />
+        </View>
+
+        {/* Equity Curve */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
+          <SectionHeader
+            title="Equity Curve"
+            subtitle="Your cumulative P&L across every trade."
+          />
+
+          <View
+            style={{
+              paddingLeft: 8,
+              paddingRight: 8,
+              paddingTop: 8,
+              paddingBottom: 14,
+              overflow: "hidden",
+            }}
+          >
+            <LineChart
+              data={analytics.equityData}
+              height={240}
+              width={300}
+              spacing={
+                analytics.equityData.length <= 1
+                  ? 0
+                  : Math.max(
+                      38,
+                      Math.min(
+                        62,
+                        280 / Math.max(analytics.equityData.length - 1, 1),
+                      ),
+                    )
+              }
+              initialSpacing={18}
+              endSpacing={18}
+              thickness={3}
+              color={theme.primary}
+              dataPointsColor={theme.primary}
+              dataPointsRadius={4}
+              curved
+              curvature={0.2}
+              hideRules={false}
+              rulesColor={theme.border}
+              rulesType="dashed"
+              hideYAxisText={false}
+              yAxisColor={theme.border}
+              yAxisThickness={1}
+              xAxisColor={theme.border}
+              xAxisThickness={1}
+              noOfSections={4}
+              isAnimated={false}
+              areaChart
+              startFillColor={theme.primary}
+              endFillColor={theme.primary}
+              startOpacity={0.16}
+              endOpacity={0.01}
+              yAxisTextStyle={{
+                color: theme.textSecondary,
+                fontSize: 10,
+              }}
+              xAxisLabelTextStyle={{
+                color: theme.textSecondary,
+                fontSize: 10,
+              }}
+              focusEnabled
+              showDataPointOnFocus
+              showStripOnFocus
+              stripColor={theme.primary}
+              stripWidth={1}
+              stripOpacity={0.4}
+              focusedDataPointColor={theme.primary}
+              focusedDataPointRadius={6}
+              unFocusOnPressOut={false}
+              delayBeforeUnFocus={60000}
+              pointerConfig={{
+                pointerStripHeight: 195,
+                pointerStripColor: theme.primary,
+                pointerStripWidth: 1,
+                pointerColor: theme.primary,
+                radius: 5,
+                activatePointersInstantlyOnTouch: true,
+                autoAdjustPointerLabelPosition: true,
+                pointerLabelWidth: 145,
+                pointerLabelHeight: 78,
+                pointerLabelComponent: (
+                  items: any[],
+                  _secondaryDataItem: any,
+                  pointerIndex: number,
+                ) => {
+                  const item = items?.[0];
+
+                  if (!item) {
+                    return null;
+                  }
+
+                  const originalTrade = analytics.equityData[pointerIndex];
+
+                  return (
+                    <View
+                      style={{
+                        width: 145,
+                        backgroundColor: theme.card,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        paddingHorizontal: 10,
+                        paddingVertical: 9,
+                        shadowColor: "#000",
+                        shadowOpacity: 0.15,
+                        shadowRadius: 8,
+                        shadowOffset: {
+                          width: 0,
+                          height: 3,
+                        },
+                        elevation: 5,
+                      }}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          color: theme.textSecondary,
+                          fontSize: 10,
+                          fontWeight: "700",
+                        }}
+                      >
+                        Trade {pointerIndex + 1}
+                        {originalTrade?.instrument
+                          ? ` · ${originalTrade.instrument}`
+                          : ""}
+                      </Text>
+
+                      <Text
+                        style={{
+                          color:
+                            item.value >= 0
+                              ? theme.positive
+                              : theme.primaryDark,
+                          fontSize: 16,
+                          fontWeight: "800",
+                          marginTop: 2,
+                        }}
+                      >
+                        {formatCurrency(item.value)}
+                      </Text>
+
+                      <Text
+                        style={{
+                          color: theme.textSecondary,
+                          fontSize: 9,
+                        }}
+                      >
+                        Cumulative P&L
+                      </Text>
+
+                      {originalTrade ? (
+                        <Text
+                          style={{
+                            color:
+                              originalTrade.pnl >= 0
+                                ? theme.positive
+                                : theme.primaryDark,
+                            fontSize: 10,
+                            fontWeight: "700",
+                            marginTop: 3,
+                          }}
+                        >
+                          Trade: {formatCurrency(originalTrade.pnl)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  );
+                },
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Trade Quality */}
         <View
           style={{
             backgroundColor: theme.card,
@@ -965,7 +1192,7 @@ export default function AnalyticsScreen() {
         >
           <SectionHeader
             title="Trade Quality"
-            subtitle="How your trades performed from both outcome and execution perspectives."
+            subtitle="Outcome and execution quality combined."
           />
 
           <View
@@ -978,8 +1205,8 @@ export default function AnalyticsScreen() {
             <PieChart
               data={tradeQualityData}
               donut
-              radius={92}
-              innerRadius={60}
+              radius={88}
+              innerRadius={58}
               innerCircleColor={theme.card}
               centerLabelComponent={() => (
                 <View
@@ -991,7 +1218,7 @@ export default function AnalyticsScreen() {
                   <Text
                     style={{
                       color: theme.text,
-                      fontSize: 25,
+                      fontSize: 24,
                       fontWeight: "900",
                     }}
                   >
@@ -1003,7 +1230,6 @@ export default function AnalyticsScreen() {
                       color: theme.textSecondary,
                       fontSize: 10,
                       fontWeight: "700",
-                      marginTop: -2,
                     }}
                   >
                     TRADES
@@ -1015,7 +1241,7 @@ export default function AnalyticsScreen() {
 
           <View
             style={{
-              marginTop: 8,
+              marginTop: 10,
               gap: 9,
             }}
           >
@@ -1126,48 +1352,33 @@ export default function AnalyticsScreen() {
             marginBottom: 16,
           }}
         >
-          <Text
-            style={{
-              color: theme.text,
-              fontSize: 17,
-              fontWeight: "800",
-            }}
-          >
-            Win vs Loss
-          </Text>
-
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              marginTop: 3,
-            }}
-          >
-            Your overall trade outcome distribution
-          </Text>
+          <SectionHeader
+            title="Win vs Loss"
+            subtitle="Your overall trade outcome distribution."
+          />
 
           <View
             style={{
               alignItems: "center",
-              marginTop: 18,
+              marginTop: 8,
             }}
           >
             <PieChart
               data={[
                 {
                   value: analytics.wins,
-                  color: theme.primary,
+                  color: theme.positive,
                   text: "Wins",
                 },
                 {
                   value: analytics.losses,
-                  color: theme.positive,
+                  color: theme.primaryDark,
                   text: "Losses",
                 },
               ].filter((item) => item.value > 0)}
               donut
-              radius={82}
-              innerRadius={56}
+              radius={78}
+              innerRadius={54}
               innerCircleColor={theme.card}
               centerLabelComponent={() => (
                 <View
@@ -1179,7 +1390,7 @@ export default function AnalyticsScreen() {
                   <Text
                     style={{
                       color: theme.text,
-                      fontSize: 24,
+                      fontSize: 23,
                       fontWeight: "900",
                     }}
                   >
@@ -1202,7 +1413,7 @@ export default function AnalyticsScreen() {
 
           <View
             style={{
-              marginTop: 18,
+              marginTop: 14,
               gap: 10,
             }}
           >
@@ -1215,7 +1426,7 @@ export default function AnalyticsScreen() {
               {
                 label: "Losses",
                 value: analytics.losses,
-                color: theme.primary,
+                color: theme.primaryDark,
               },
             ].map((item) => (
               <View
@@ -1270,36 +1481,21 @@ export default function AnalyticsScreen() {
         <View
           style={{
             backgroundColor: theme.card,
-            borderColor: theme.border,
-            borderWidth: 1,
             borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
             padding: 18,
             marginBottom: 16,
           }}
         >
-          <Text
-            style={{
-              color: theme.text,
-              fontSize: 17,
-              fontWeight: "800",
-            }}
-          >
-            Monthly Performance
-          </Text>
-
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              marginTop: 3,
-            }}
-          >
-            Your P&L consistency across recent trading months
-          </Text>
+          <SectionHeader
+            title="Monthly Performance"
+            subtitle="See whether your results are becoming more consistent."
+          />
 
           <View
             style={{
-              marginTop: 18,
+              marginTop: 4,
             }}
           >
             {analytics.monthlyPerformance.map((month) => {
@@ -1332,7 +1528,7 @@ export default function AnalyticsScreen() {
                   >
                     <Text
                       style={{
-                        color: theme.textSecondary,
+                        color: theme.text,
                         fontSize: 11,
                         fontWeight: "700",
                       }}
@@ -1342,7 +1538,8 @@ export default function AnalyticsScreen() {
 
                     <Text
                       style={{
-                        color: month.pnl >= 0 ? theme.positive : theme.primary,
+                        color:
+                          month.pnl >= 0 ? theme.positive : theme.primaryDark,
                         fontSize: 12,
                         fontWeight: "800",
                       }}
@@ -1364,7 +1561,7 @@ export default function AnalyticsScreen() {
                         width: `${widthPercent}%` as `${number}%`,
                         height: 8,
                         backgroundColor:
-                          month.pnl >= 0 ? theme.positive : theme.primary,
+                          month.pnl >= 0 ? theme.positive : theme.primaryDark,
                         borderRadius: 4,
                       }}
                     />
@@ -1385,131 +1582,94 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
-        {/* Trading Health */}
+        {/* Execution & Discipline */}
         <View
           style={{
             backgroundColor: theme.card,
-            borderColor: theme.border,
-            borderWidth: 1,
             borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
             padding: 18,
             marginBottom: 16,
           }}
         >
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 12,
-              fontWeight: "700",
-            }}
-          >
-            TRADING HEALTH
-          </Text>
-
-          <Text
-            style={{
-              color: theme.text,
-              fontSize: 28,
-              fontWeight: "800",
-              marginTop: 4,
-            }}
-          >
-            {Math.round(
-              traderScore.planAdherence * 0.35 +
-                traderScore.consistency * 0.3 +
-                traderScore.journaling * 0.2 +
-                ((analytics.goodWins + analytics.goodLosses) /
-                  Math.max(
-                    analytics.goodWins +
-                      analytics.badWins +
-                      analytics.goodLosses +
-                      analytics.badLosses,
-                    1,
-                  )) *
-                  100 *
-                  0.15,
-            )}
-            <Text
-              style={{
-                color: theme.textSecondary,
-                fontSize: 14,
-                fontWeight: "600",
-              }}
-            >
-              /100
-            </Text>
-          </Text>
-
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              lineHeight: 16,
-              marginTop: 8,
-            }}
-          >
-            A process-focused view of your discipline, consistency, journaling,
-            and quality of execution.
-          </Text>
-        </View>
-
-        {/* Discipline Streak */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderColor: theme.border,
-            borderWidth: 1,
-            borderRadius: 20,
-            padding: 18,
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 12,
-              fontWeight: "700",
-            }}
-          >
-            DISCIPLINE STREAK
-          </Text>
+          <SectionHeader
+            title="Execution & Discipline"
+            subtitle="The quality of your process matters more than any single trade."
+          />
 
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              marginTop: 4,
+              backgroundColor: theme.cardSecondary,
+              borderRadius: 14,
+              padding: 14,
+              marginBottom: 12,
             }}
           >
-            <View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8,
+              }}
+            >
               <Text
                 style={{
                   color: theme.text,
-                  fontSize: 30,
-                  fontWeight: "900",
+                  fontSize: 12,
+                  fontWeight: "700",
                 }}
               >
-                {disciplineStreak.currentStreak}
+                Plan adherence
               </Text>
 
               <Text
                 style={{
-                  color: theme.textSecondary,
-                  fontSize: 11,
-                  marginTop: -2,
+                  color:
+                    analytics.planRate >= 70
+                      ? theme.positive
+                      : theme.primaryDark,
+                  fontSize: 13,
+                  fontWeight: "800",
                 }}
               >
-                current streak
+                {analytics.planRate.toFixed(0)}%
               </Text>
             </View>
 
             <View
               style={{
+                height: 10,
+                borderRadius: 99,
+                backgroundColor: theme.background,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  width: `${Math.min(analytics.planRate, 100)}%`,
+                  height: "100%",
+                  backgroundColor:
+                    analytics.planRate >= 70 ? theme.positive : theme.primary,
+                  borderRadius: 99,
+                }}
+              />
+            </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
                 backgroundColor: theme.cardSecondary,
-                borderRadius: 12,
-                paddingHorizontal: 12,
-                paddingVertical: 9,
+                borderRadius: 14,
+                padding: 14,
               }}
             >
               <Text
@@ -1519,19 +1679,156 @@ export default function AnalyticsScreen() {
                   fontWeight: "700",
                 }}
               >
-                BEST
+                CURRENT STREAK
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 27,
+                  fontWeight: "900",
+                  marginTop: 5,
+                }}
+              >
+                {disciplineStreak.currentStreak}
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  marginTop: 1,
+                }}
+              >
+                plan-followed trades
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.cardSecondary,
+                borderRadius: 14,
+                padding: 14,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                BEST STREAK
               </Text>
 
               <Text
                 style={{
                   color: theme.primary,
-                  fontSize: 17,
-                  fontWeight: "800",
-                  marginTop: 2,
+                  fontSize: 27,
+                  fontWeight: "900",
+                  marginTop: 5,
                 }}
               >
                 {disciplineStreak.bestStreak}
               </Text>
+
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  marginTop: 1,
+                }}
+              >
+                personal best
+              </Text>
+            </View>
+          </View>
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 11,
+              lineHeight: 16,
+              marginTop: 12,
+            }}
+          >
+            {disciplineStreak.message}
+          </Text>
+        </View>
+
+        {/* Trading Health */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 11,
+                  fontWeight: "800",
+                  letterSpacing: 0.8,
+                }}
+              >
+                TRADING HEALTH
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.text,
+                  fontSize: 29,
+                  fontWeight: "900",
+                  marginTop: 4,
+                }}
+              >
+                {healthScore}
+                <Text
+                  style={{
+                    color: theme.textSecondary,
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  /100
+                </Text>
+              </Text>
+            </View>
+
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor:
+                  healthScore >= 70 ? theme.positiveLight : theme.primaryLight,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons
+                name={healthScore >= 70 ? "checkmark" : "pulse-outline"}
+                size={23}
+                color={healthScore >= 70 ? theme.positive : theme.primary}
+              />
             </View>
           </View>
 
@@ -1543,41 +1840,408 @@ export default function AnalyticsScreen() {
               marginTop: 10,
             }}
           >
-            {disciplineStreak.message}
+            A process-focused view of your discipline, consistency, journaling,
+            and execution quality.
           </Text>
+        </View>
+
+        {/* Drawdown */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <SectionHeader
+            title="Drawdown"
+            subtitle="Understand the risk behind your results."
+            onInfo={() => setInfoType("drawdown")}
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+            }}
+          >
+            <MetricCard
+              label="MAX DRAWDOWN"
+              value={
+                analytics.maxDrawdownAbs > 0
+                  ? formatCurrency(-analytics.maxDrawdownAbs)
+                  : "₹0"
+              }
+              negative={analytics.maxDrawdownAbs > 0}
+            />
+
+            <MetricCard
+              label="CURRENT"
+              value={
+                analytics.currentDrawdown < 0
+                  ? formatCurrency(analytics.currentDrawdown)
+                  : "₹0"
+              }
+              negative={analytics.currentDrawdown < 0}
+              positive={analytics.currentDrawdown >= 0}
+            />
+          </View>
+
+          <View
+            style={{
+              backgroundColor: theme.cardSecondary,
+              borderRadius: 12,
+              padding: 12,
+              marginTop: 10,
+            }}
+          >
+            <Text
+              style={{
+                color: theme.textSecondary,
+                fontSize: 10,
+                fontWeight: "700",
+              }}
+            >
+              RECOVERY
+            </Text>
+
+            <Text
+              style={{
+                color: theme.text,
+                fontSize: 14,
+                fontWeight: "700",
+                marginTop: 3,
+              }}
+            >
+              {analytics.maxDrawdownAbs === 0
+                ? "No drawdown yet"
+                : analytics.recoveryTrades > 0
+                  ? `Recovered in ${analytics.recoveryTrades} trades`
+                  : "Still recovering"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Long vs Short */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <SectionHeader
+            title="Long vs Short"
+            subtitle="See which direction is producing your edge."
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.cardSecondary,
+                borderRadius: 14,
+                padding: 14,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Ionicons name="arrow-up" size={15} color={theme.positive} />
+
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 12,
+                    fontWeight: "800",
+                  }}
+                >
+                  LONG
+                </Text>
+              </View>
+
+              <Text
+                style={{
+                  color:
+                    analytics.longStats.pnl >= 0
+                      ? theme.positive
+                      : theme.primaryDark,
+                  fontSize: 20,
+                  fontWeight: "800",
+                  marginTop: 12,
+                }}
+              >
+                {formatCurrency(analytics.longStats.pnl)}
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  marginTop: 4,
+                }}
+              >
+                {analytics.longStats.trades} trades ·{" "}
+                {analytics.longStats.winRate.toFixed(0)}%
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: theme.cardSecondary,
+                borderRadius: 14,
+                padding: 14,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Ionicons
+                  name="arrow-down"
+                  size={15}
+                  color={theme.primaryDark}
+                />
+
+                <Text
+                  style={{
+                    color: theme.text,
+                    fontSize: 12,
+                    fontWeight: "800",
+                  }}
+                >
+                  SHORT
+                </Text>
+              </View>
+
+              <Text
+                style={{
+                  color:
+                    analytics.shortStats.pnl >= 0
+                      ? theme.positive
+                      : theme.primaryDark,
+                  fontSize: 20,
+                  fontWeight: "800",
+                  marginTop: 12,
+                }}
+              >
+                {formatCurrency(analytics.shortStats.pnl)}
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 10,
+                  marginTop: 4,
+                }}
+              >
+                {analytics.shortStats.trades} trades ·{" "}
+                {analytics.shortStats.winRate.toFixed(0)}%
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Emotion Analysis */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <SectionHeader
+            title="Emotion Analysis"
+            subtitle="Which emotional states are helping or hurting?"
+          />
+
+          {analytics.emotionPerformance.length === 0 ? (
+            <Text
+              style={{
+                color: theme.textSecondary,
+                fontSize: 12,
+              }}
+            >
+              Add emotions to your trades to unlock this analysis.
+            </Text>
+          ) : (
+            analytics.emotionPerformance.slice(0, 6).map((item) => (
+              <View
+                key={item.emotion}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 10,
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.border,
+                }}
+              >
+                <View
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      color: theme.text,
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {item.emotion}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: theme.textSecondary,
+                      fontSize: 10,
+                      marginTop: 2,
+                    }}
+                  >
+                    {item.trades} trades · {item.winRate.toFixed(0)}% win rate
+                  </Text>
+                </View>
+
+                <Text
+                  style={{
+                    color: item.pnl >= 0 ? theme.positive : theme.primaryDark,
+                    fontSize: 13,
+                    fontWeight: "800",
+                    marginLeft: 10,
+                  }}
+                >
+                  {formatCurrency(item.pnl)}
+                </Text>
+              </View>
+            ))
+          )}
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+              marginTop: 14,
+            }}
+          >
+            <MetricCard
+              label="CONFIDENCE"
+              value={
+                analytics.averageConfidence > 0
+                  ? `${analytics.averageConfidence.toFixed(1)}/5`
+                  : "—"
+              }
+            />
+
+            <MetricCard
+              label="FOMO"
+              value={
+                analytics.averageFomo > 0
+                  ? `${analytics.averageFomo.toFixed(1)}/5`
+                  : "—"
+              }
+              negative={analytics.averageFomo >= 3.5}
+            />
+          </View>
+        </View>
+
+        {/* Detailed Metrics */}
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 18,
+            marginBottom: 16,
+          }}
+        >
+          <SectionHeader
+            title="Detailed Metrics"
+            subtitle="Deeper numbers for reviewing your edge."
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 10,
+            }}
+          >
+            <MetricCard
+              label="PROFIT FACTOR"
+              value={
+                analytics.profitFactor > 0
+                  ? analytics.profitFactor.toFixed(2)
+                  : "—"
+              }
+              positive={analytics.profitFactor >= 1.5}
+              negative={
+                analytics.profitFactor > 0 && analytics.profitFactor < 1
+              }
+              subtext="Gross profit ÷ gross loss"
+            />
+
+            <MetricCard
+              label="EXPECTANCY"
+              value={formatCurrency(analytics.expectancy)}
+              positive={analytics.expectancy > 0}
+              negative={analytics.expectancy < 0}
+              subtext="Average P&L per trade"
+            />
+
+            <MetricCard
+              label="BEST TRADE"
+              value={formatCurrency(analytics.bestTrade)}
+              positive
+            />
+
+            <MetricCard
+              label="WORST TRADE"
+              value={formatCurrency(analytics.worstTrade)}
+              negative
+            />
+          </View>
         </View>
 
         {/* Trading Insights */}
         <View
           style={{
             backgroundColor: theme.card,
-            borderColor: theme.border,
-            borderWidth: 1,
             borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
             padding: 18,
             marginBottom: 16,
           }}
         >
-          <Text
-            style={{
-              color: theme.text,
-              fontSize: 16,
-              fontWeight: "800",
-            }}
-          >
-            Trading Insights
-          </Text>
-
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 11,
-              marginTop: 3,
-              marginBottom: 14,
-            }}
-          >
-            Patterns found in your trading data
-          </Text>
+          <SectionHeader
+            title="Trading Insights"
+            subtitle="Patterns found in your trading data."
+          />
 
           {tradingInsights.map((insight, index) => (
             <View
@@ -1636,822 +2300,12 @@ export default function AnalyticsScreen() {
           ))}
         </View>
 
-        {/* Top metrics */}
-        <View
-          style={{
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 10,
-            marginBottom: 14,
-          }}
-        >
-          <MetricCard
-            label="TOTAL P&L"
-            value={formatCurrency(analytics.totalPnl)}
-            positive={analytics.totalPnl >= 0}
-            negative={analytics.totalPnl < 0}
-            subtext={`${trades.length} trades`}
-          />
-
-          <MetricCard
-            label="WIN RATE"
-            value={`${analytics.winRate.toFixed(1)}%`}
-            positive={analytics.winRate >= 50}
-            negative={analytics.winRate < 40}
-            subtext={`${analytics.wins}W / ${analytics.losses}L`}
-          />
-
-          <MetricCard
-            label="AVG WIN"
-            value={formatCurrency(analytics.averageWin)}
-            positive
-          />
-
-          <MetricCard
-            label="AVG LOSS"
-            value={formatCurrency(-analytics.averageLoss)}
-            negative
-          />
-        </View>
-
-        {/* Quality */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: theme.border,
-            padding: 16,
-            marginBottom: 14,
-          }}
-        >
-          <SectionHeader title="Performance Quality" />
-
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 10,
-            }}
-          >
-            <MetricCard
-              label="PROFIT FACTOR"
-              value={
-                analytics.profitFactor > 0
-                  ? analytics.profitFactor.toFixed(2)
-                  : "—"
-              }
-              positive={analytics.profitFactor >= 1.5}
-              negative={
-                analytics.profitFactor > 0 && analytics.profitFactor < 1
-              }
-              subtext="Gross profit ÷ gross loss"
-            />
-
-            <MetricCard
-              label="EXPECTANCY"
-              value={formatCurrency(analytics.expectancy)}
-              positive={analytics.expectancy > 0}
-              negative={analytics.expectancy < 0}
-              subtext="Average P&L per trade"
-            />
-
-            <MetricCard
-              label="BEST TRADE"
-              value={formatCurrency(analytics.bestTrade)}
-              positive
-            />
-
-            <MetricCard
-              label="WORST TRADE"
-              value={formatCurrency(analytics.worstTrade)}
-              negative
-            />
-          </View>
-        </View>
-
-        {/* Trade Outcomes */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 16,
-            padding: 16,
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              color: theme.text,
-              fontSize: 16,
-              fontWeight: "800",
-              marginBottom: 12,
-            }}
-          >
-            Trade Outcomes
-          </Text>
-
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 10,
-            }}
-          >
-            <View style={{ flex: 1, minWidth: "45%" }}>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Good Wins
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.positive,
-                  fontSize: 22,
-                  fontWeight: "800",
-                  marginTop: 4,
-                }}
-              >
-                {analytics.goodWins}
-              </Text>
-            </View>
-
-            <View style={{ flex: 1, minWidth: "45%" }}>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Bad Wins
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.primaryDark,
-                  fontSize: 22,
-                  fontWeight: "800",
-                  marginTop: 4,
-                }}
-              >
-                {analytics.badWins}
-              </Text>
-            </View>
-
-            <View style={{ flex: 1, minWidth: "45%" }}>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Good Losses
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 22,
-                  fontWeight: "800",
-                  marginTop: 4,
-                }}
-              >
-                {analytics.goodLosses}
-              </Text>
-            </View>
-
-            <View style={{ flex: 1, minWidth: "45%" }}>
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 12,
-                }}
-              >
-                Bad Losses
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.primaryDark,
-                  fontSize: 22,
-                  fontWeight: "800",
-                  marginTop: 4,
-                }}
-              >
-                {analytics.badLosses}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Behavioral Insights */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderColor: theme.border,
-            borderWidth: 1,
-            borderRadius: 20,
-            padding: 18,
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              color: theme.textSecondary,
-              fontSize: 12,
-              fontWeight: "700",
-            }}
-          >
-            BEHAVIORAL INSIGHT
-          </Text>
-
-          <Text
-            style={{
-              color: theme.text,
-              fontSize: 15,
-              fontWeight: "700",
-              marginTop: 8,
-              lineHeight: 21,
-            }}
-          >
-            {analytics.badWins > analytics.goodWins
-              ? "Some profitable trades are coming from poor execution. Focus on following your plan even when the trade wins."
-              : analytics.badLosses > analytics.goodLosses
-                ? "Losses are showing signs of poor execution. Focus on reducing rule violations and protecting your risk."
-                : analytics.goodWins + analytics.goodLosses > 0
-                  ? "Your results show a healthy connection between execution quality and outcomes. Keep protecting the process."
-                  : "Keep recording your trades to build a clearer picture of your execution quality."}
-          </Text>
-        </View>
-
-        {/* Equity */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: theme.border,
-            padding: 16,
-            marginBottom: 14,
-          }}
-        >
-          <SectionHeader
-            title="Equity Curve"
-            subtitle="Cumulative P&L across your trades."
-          />
-
-          <View
-            style={{
-              paddingLeft: 8,
-              paddingRight: 8,
-              paddingTop: 10,
-              paddingBottom: 16,
-              overflow: "hidden",
-            }}
-          >
-            <LineChart
-              data={analytics.equityData}
-              height={240}
-              width={300}
-              spacing={
-                analytics.equityData.length <= 1
-                  ? 0
-                  : Math.max(
-                      38,
-                      Math.min(
-                        62,
-                        280 / Math.max(analytics.equityData.length - 1, 1),
-                      ),
-                    )
-              }
-              initialSpacing={18}
-              endSpacing={18}
-              thickness={3}
-              color={theme.primary}
-              dataPointsColor={theme.primary}
-              dataPointsRadius={4}
-              curved
-              curvature={0.2}
-              hideRules={false}
-              rulesColor={theme.border}
-              rulesType="dashed"
-              hideYAxisText={false}
-              yAxisColor={theme.border}
-              yAxisThickness={1}
-              xAxisColor={theme.border}
-              xAxisThickness={1}
-              noOfSections={4}
-              isAnimated={false}
-              areaChart
-              startFillColor={theme.primary}
-              endFillColor={theme.primary}
-              startOpacity={0.16}
-              endOpacity={0.01}
-              yAxisTextStyle={{
-                color: theme.textSecondary,
-                fontSize: 10,
-              }}
-              xAxisLabelTextStyle={{
-                color: theme.textSecondary,
-                fontSize: 10,
-              }}
-              focusEnabled
-              showDataPointOnFocus
-              showStripOnFocus
-              stripColor={theme.primary}
-              stripWidth={1}
-              stripOpacity={0.4}
-              focusedDataPointColor={theme.primary}
-              focusedDataPointRadius={6}
-              unFocusOnPressOut={false}
-              delayBeforeUnFocus={60000}
-              pointerConfig={{
-                pointerStripHeight: 195,
-                pointerStripColor: theme.primary,
-                pointerStripWidth: 1,
-                pointerColor: theme.primary,
-                radius: 5,
-                activatePointersInstantlyOnTouch: true,
-                autoAdjustPointerLabelPosition: true,
-                pointerLabelWidth: 145,
-                pointerLabelHeight: 78,
-                pointerLabelComponent: (
-                  items: any[],
-                  _secondaryDataItem: any,
-                  pointerIndex: number,
-                ) => {
-                  const item = items?.[0];
-
-                  if (!item) return null;
-
-                  const originalTrade = analytics.equityData[pointerIndex];
-
-                  return (
-                    <View
-                      style={{
-                        width: 145,
-                        backgroundColor: theme.card,
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: theme.border,
-                        paddingHorizontal: 10,
-                        paddingVertical: 9,
-                        shadowColor: "#000",
-                        shadowOpacity: 0.15,
-                        shadowRadius: 8,
-                        shadowOffset: {
-                          width: 0,
-                          height: 3,
-                        },
-                        elevation: 5,
-                      }}
-                    >
-                      <Text
-                        numberOfLines={1}
-                        style={{
-                          color: theme.textSecondary,
-                          fontSize: 10,
-                          fontWeight: "700",
-                        }}
-                      >
-                        Trade {pointerIndex + 1}
-                        {originalTrade?.instrument
-                          ? ` · ${originalTrade.instrument}`
-                          : ""}
-                      </Text>
-
-                      <Text
-                        style={{
-                          color:
-                            item.value >= 0
-                              ? theme.positive
-                              : theme.primaryDark,
-                          fontSize: 16,
-                          fontWeight: "800",
-                          marginTop: 2,
-                        }}
-                      >
-                        {formatCurrency(item.value)}
-                      </Text>
-
-                      <Text
-                        style={{
-                          color: theme.textSecondary,
-                          fontSize: 9,
-                        }}
-                      >
-                        Cumulative P&L
-                      </Text>
-
-                      {originalTrade && (
-                        <Text
-                          style={{
-                            color:
-                              originalTrade.pnl >= 0
-                                ? theme.positive
-                                : theme.primaryDark,
-                            fontSize: 10,
-                            fontWeight: "700",
-                            marginTop: 3,
-                          }}
-                        >
-                          Trade: {formatCurrency(originalTrade.pnl)}
-                        </Text>
-                      )}
-                    </View>
-                  );
-                },
-              }}
-            />
-          </View>
-        </View>
-
-        {/* Drawdown */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: theme.border,
-            padding: 16,
-            marginBottom: 14,
-          }}
-        >
-          <SectionHeader
-            title="Drawdown"
-            subtitle="How much equity you gave back from a peak."
-            onInfo={() => setInfoType("drawdown")}
-          />
-
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 10,
-            }}
-          >
-            <MetricCard
-              label="MAX DRAWDOWN"
-              value={
-                analytics.maxDrawdownAbs > 0
-                  ? formatCurrency(-analytics.maxDrawdownAbs)
-                  : "₹0"
-              }
-              negative={analytics.maxDrawdownAbs > 0}
-            />
-
-            <MetricCard
-              label="CURRENT"
-              value={
-                analytics.currentDrawdown < 0
-                  ? formatCurrency(analytics.currentDrawdown)
-                  : "₹0"
-              }
-              negative={analytics.currentDrawdown < 0}
-              positive={analytics.currentDrawdown >= 0}
-            />
-          </View>
-
-          <View
-            style={{
-              marginTop: 10,
-              backgroundColor: theme.cardSecondary,
-              borderRadius: 12,
-              padding: 12,
-            }}
-          >
-            <Text
-              style={{
-                color: theme.textSecondary,
-                fontSize: 11,
-              }}
-            >
-              Recovery
-            </Text>
-
-            <Text
-              style={{
-                color: theme.text,
-                fontSize: 14,
-                fontWeight: "700",
-                marginTop: 3,
-              }}
-            >
-              {analytics.maxDrawdownAbs === 0
-                ? "No drawdown yet"
-                : analytics.recoveryTrades > 0
-                  ? `Recovered in ${analytics.recoveryTrades} trades`
-                  : "Still recovering"}
-            </Text>
-          </View>
-        </View>
-
-        {/* Long vs Short */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: theme.border,
-            padding: 16,
-            marginBottom: 14,
-          }}
-        >
-          <SectionHeader
-            title="Long vs Short"
-            subtitle="See which direction is producing your edge."
-          />
-
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 10,
-            }}
-          >
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: theme.cardSecondary,
-                borderRadius: 14,
-                padding: 14,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <Ionicons name="arrow-up" size={15} color={theme.positive} />
-
-                <Text
-                  style={{
-                    color: theme.text,
-                    fontSize: 13,
-                    fontWeight: "800",
-                  }}
-                >
-                  LONG
-                </Text>
-              </View>
-
-              <Text
-                style={{
-                  color:
-                    analytics.longStats.pnl >= 0
-                      ? theme.positive
-                      : theme.primaryDark,
-                  fontSize: 21,
-                  fontWeight: "800",
-                  marginTop: 12,
-                }}
-              >
-                {formatCurrency(analytics.longStats.pnl)}
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 10,
-                  marginTop: 4,
-                }}
-              >
-                {analytics.longStats.trades} trades ·{" "}
-                {analytics.longStats.winRate.toFixed(0)}% win rate
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: theme.cardSecondary,
-                borderRadius: 14,
-                padding: 14,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <Ionicons
-                  name="arrow-down"
-                  size={15}
-                  color={theme.primaryDark}
-                />
-
-                <Text
-                  style={{
-                    color: theme.text,
-                    fontSize: 13,
-                    fontWeight: "800",
-                  }}
-                >
-                  SHORT
-                </Text>
-              </View>
-
-              <Text
-                style={{
-                  color:
-                    analytics.shortStats.pnl >= 0
-                      ? theme.positive
-                      : theme.primaryDark,
-                  fontSize: 21,
-                  fontWeight: "800",
-                  marginTop: 12,
-                }}
-              >
-                {formatCurrency(analytics.shortStats.pnl)}
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.textSecondary,
-                  fontSize: 10,
-                  marginTop: 4,
-                }}
-              >
-                {analytics.shortStats.trades} trades ·{" "}
-                {analytics.shortStats.winRate.toFixed(0)}% win rate
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Emotions */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: theme.border,
-            padding: 16,
-            marginBottom: 14,
-          }}
-        >
-          <SectionHeader
-            title="Emotion Analysis"
-            subtitle="Which emotional states are helping or hurting?"
-          />
-
-          {analytics.emotionPerformance.length === 0 ? (
-            <Text
-              style={{
-                color: theme.textSecondary,
-                fontSize: 12,
-              }}
-            >
-              Add emotions to your trades to unlock this analysis.
-            </Text>
-          ) : (
-            analytics.emotionPerformance.slice(0, 6).map((item) => (
-              <View
-                key={item.emotion}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 10,
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.border,
-                }}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      color: theme.text,
-                      fontSize: 13,
-                      fontWeight: "700",
-                    }}
-                  >
-                    {item.emotion}
-                  </Text>
-
-                  <Text
-                    style={{
-                      color: theme.textSecondary,
-                      fontSize: 10,
-                      marginTop: 2,
-                    }}
-                  >
-                    {item.trades} trades · {item.winRate.toFixed(0)}% win rate
-                  </Text>
-                </View>
-
-                <Text
-                  style={{
-                    color: item.pnl >= 0 ? theme.positive : theme.primaryDark,
-                    fontSize: 13,
-                    fontWeight: "800",
-                  }}
-                >
-                  {formatCurrency(item.pnl)}
-                </Text>
-              </View>
-            ))
-          )}
-
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 10,
-              marginTop: 14,
-            }}
-          >
-            <MetricCard
-              label="CONFIDENCE"
-              value={
-                analytics.averageConfidence > 0
-                  ? `${analytics.averageConfidence.toFixed(1)}/5`
-                  : "—"
-              }
-            />
-
-            <MetricCard
-              label="FOMO"
-              value={
-                analytics.averageFomo > 0
-                  ? `${analytics.averageFomo.toFixed(1)}/5`
-                  : "—"
-              }
-              negative={analytics.averageFomo >= 3.5}
-            />
-          </View>
-        </View>
-
-        {/* Plan adherence */}
-        <View
-          style={{
-            backgroundColor: theme.card,
-            borderRadius: 18,
-            borderWidth: 1,
-            borderColor: theme.border,
-            padding: 16,
-            marginBottom: 14,
-          }}
-        >
-          <SectionHeader
-            title="Execution"
-            subtitle="Are you following the process?"
-          />
-
-          <View
-            style={{
-              height: 12,
-              borderRadius: 99,
-              backgroundColor: theme.cardSecondary,
-              overflow: "hidden",
-              marginBottom: 10,
-            }}
-          >
-            <View
-              style={{
-                width: `${Math.min(analytics.planRate, 100)}%`,
-                height: "100%",
-                backgroundColor: theme.primary,
-                borderRadius: 99,
-              }}
-            />
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text
-              style={{
-                color: theme.textSecondary,
-                fontSize: 12,
-              }}
-            >
-              Plan adherence
-            </Text>
-
-            <Text
-              style={{
-                color: theme.text,
-                fontSize: 12,
-                fontWeight: "800",
-              }}
-            >
-              {analytics.planRate.toFixed(0)}%
-            </Text>
-          </View>
-        </View>
-
-        {/* Bottom insight */}
+        {/* Quick Insight */}
         <View
           style={{
             backgroundColor: theme.primaryLight,
-            borderRadius: 18,
-            padding: 16,
+            borderRadius: 20,
+            padding: 18,
             borderWidth: 1,
             borderColor: theme.primary,
           }}
@@ -2493,7 +2347,7 @@ export default function AnalyticsScreen() {
         </View>
       </ScrollView>
 
-      {/* Info modal */}
+      {/* Info Modal */}
       <Modal
         visible={infoType !== null}
         transparent
@@ -2542,7 +2396,16 @@ export default function AnalyticsScreen() {
                     : "Drawdown"}
               </Text>
 
-              <Pressable onPress={() => setInfoType(null)}>
+              <Pressable
+                onPress={() => setInfoType(null)}
+                hitSlop={10}
+                style={{
+                  width: 36,
+                  height: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <Ionicons name="close" size={22} color={theme.textSecondary} />
               </Pressable>
             </View>

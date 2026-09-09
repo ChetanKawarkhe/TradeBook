@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -27,8 +28,7 @@ export default function PlaybookScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme ?? "light"];
 
-  const { rules, addRule, deleteRule } = useJournal();
-
+  const { rules, addRule, deleteRule, loading } = useJournal();
   const { trades } = useTrades();
 
   const [title, setTitle] = useState("");
@@ -36,7 +36,7 @@ export default function PlaybookScreen() {
 
   const [category, setCategory] = useState<PlaybookRule["category"]>("ENTRY");
 
-  const playbookStats = React.useMemo(() => {
+  const playbookStats = useMemo(() => {
     const totalTrades = trades.length;
 
     const followedPlan = trades.filter((trade) => trade.followedPlan).length;
@@ -72,15 +72,10 @@ export default function PlaybookScreen() {
 
     const rule: PlaybookRule = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-
       title: title.trim(),
-
       description: description.trim(),
-
       category,
-
       active: true,
-
       createdAt: new Date().toISOString(),
     };
 
@@ -108,6 +103,208 @@ export default function PlaybookScreen() {
     );
   }
 
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: theme.background,
+          padding: 20,
+          paddingTop: 28,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 22,
+          }}
+        >
+          <View
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 21,
+              backgroundColor: theme.cardSecondary,
+              marginRight: 12,
+            }}
+          />
+
+          <View>
+            <View
+              style={{
+                width: 125,
+                height: 28,
+                borderRadius: 8,
+                backgroundColor: theme.cardSecondary,
+              }}
+            />
+
+            <View
+              style={{
+                width: 210,
+                height: 11,
+                borderRadius: 6,
+                backgroundColor: theme.cardSecondary,
+                marginTop: 7,
+              }}
+            />
+          </View>
+        </View>
+
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 16,
+            marginBottom: 18,
+          }}
+        >
+          <View
+            style={{
+              width: 85,
+              height: 18,
+              borderRadius: 7,
+              backgroundColor: theme.cardSecondary,
+              marginBottom: 15,
+            }}
+          />
+
+          <View
+            style={{
+              height: 48,
+              borderRadius: 13,
+              backgroundColor: theme.cardSecondary,
+              marginBottom: 14,
+            }}
+          />
+
+          <View
+            style={{
+              width: 75,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: theme.cardSecondary,
+              marginBottom: 8,
+            }}
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 8,
+              marginBottom: 14,
+            }}
+          >
+            {[1, 2, 3, 4].map((item) => (
+              <View
+                key={item}
+                style={{
+                  width: 58,
+                  height: 34,
+                  borderRadius: 999,
+                  backgroundColor: theme.cardSecondary,
+                }}
+              />
+            ))}
+          </View>
+
+          <View
+            style={{
+              height: 80,
+              borderRadius: 13,
+              backgroundColor: theme.cardSecondary,
+              marginBottom: 14,
+            }}
+          />
+
+          <View
+            style={{
+              height: 50,
+              borderRadius: 14,
+              backgroundColor: theme.cardSecondary,
+            }}
+          />
+        </View>
+
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 16,
+          }}
+        >
+          <View
+            style={{
+              width: 110,
+              height: 14,
+              borderRadius: 6,
+              backgroundColor: theme.cardSecondary,
+            }}
+          />
+
+          <View
+            style={{
+              width: 65,
+              height: 27,
+              borderRadius: 7,
+              backgroundColor: theme.cardSecondary,
+              marginTop: 8,
+            }}
+          />
+
+          <View
+            style={{
+              width: 190,
+              height: 11,
+              borderRadius: 6,
+              backgroundColor: theme.cardSecondary,
+              marginTop: 7,
+            }}
+          />
+
+          {[1, 2, 3].map((item) => (
+            <View
+              key={item}
+              style={{
+                height: 45,
+                borderRadius: 10,
+                backgroundColor: theme.cardSecondary,
+                marginTop: 12,
+              }}
+            />
+          ))}
+        </View>
+
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 42,
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size="small" color={theme.primary} />
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 12,
+              marginTop: 9,
+            }}
+          >
+            Loading playbook...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -127,9 +324,11 @@ export default function PlaybookScreen() {
         <Pressable
           onPress={() => router.back()}
           style={{
-            width: 42,
-            height: 42,
-            borderRadius: 21,
+            width: 44,
+            height: 44,
+            minWidth: 44,
+            minHeight: 44,
+            borderRadius: 22,
             backgroundColor: theme.cardSecondary,
             alignItems: "center",
             justifyContent: "center",
@@ -139,7 +338,12 @@ export default function PlaybookScreen() {
           <Ionicons name="arrow-back" size={21} color={theme.text} />
         </Pressable>
 
-        <View>
+        <View
+          style={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
           <Text
             style={{
               color: theme.text,
@@ -156,6 +360,7 @@ export default function PlaybookScreen() {
               fontSize: 12,
               marginTop: 3,
             }}
+            numberOfLines={2}
           >
             Your rules, edge and execution checklist.
           </Text>
@@ -202,6 +407,7 @@ export default function PlaybookScreen() {
           placeholderTextColor={theme.textSecondary}
           style={{
             height: 48,
+            minHeight: 48,
             borderRadius: 13,
             borderWidth: 1,
             borderColor: theme.border,
@@ -239,6 +445,7 @@ export default function PlaybookScreen() {
                 key={item}
                 onPress={() => setCategory(item)}
                 style={{
+                  minHeight: 40,
                   paddingHorizontal: 12,
                   paddingVertical: 8,
                   borderRadius: 999,
@@ -249,6 +456,7 @@ export default function PlaybookScreen() {
                   borderColor: selected ? theme.primary : theme.border,
                   marginRight: 7,
                   marginBottom: 7,
+                  justifyContent: "center",
                 }}
               >
                 <Text
@@ -301,6 +509,7 @@ export default function PlaybookScreen() {
           onPress={saveRule}
           style={{
             height: 50,
+            minHeight: 50,
             borderRadius: 14,
             backgroundColor: theme.primary,
             alignItems: "center",
@@ -318,6 +527,7 @@ export default function PlaybookScreen() {
           </Text>
         </Pressable>
       </View>
+
       {/* Rule Tracking */}
       <View
         style={{
@@ -393,10 +603,12 @@ export default function PlaybookScreen() {
                 <View
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     paddingRight: 10,
                   }}
                 >
                   <Text
+                    numberOfLines={2}
                     style={{
                       color: theme.text,
                       fontSize: 12,
@@ -419,10 +631,12 @@ export default function PlaybookScreen() {
 
                 <Text
                   style={{
-                    color: violations > 0 ? theme.negative : theme.positive,
+                    color: violations > 0 ? theme.primaryDark : theme.positive,
                     fontSize: 13,
                     fontWeight: "800",
+                    marginLeft: 8,
                   }}
+                  numberOfLines={1}
                 >
                   {violations} {violations === 1 ? "violation" : "violations"}
                 </Text>
@@ -487,6 +701,7 @@ export default function PlaybookScreen() {
             style={{
               alignItems: "center",
               paddingVertical: 30,
+              paddingHorizontal: 12,
             }}
           >
             <Ionicons name="book-outline" size={32} color={theme.primary} />
@@ -497,6 +712,7 @@ export default function PlaybookScreen() {
                 fontSize: 14,
                 fontWeight: "700",
                 marginTop: 9,
+                textAlign: "center",
               }}
             >
               Your playbook is empty
@@ -508,6 +724,7 @@ export default function PlaybookScreen() {
                 fontSize: 11,
                 textAlign: "center",
                 marginTop: 4,
+                lineHeight: 17,
               }}
             >
               Turn your lessons into rules you can actually follow.
@@ -532,13 +749,14 @@ export default function PlaybookScreen() {
                 <View
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     paddingRight: 10,
                   }}
                 >
                   <View
                     style={{
                       flexDirection: "row",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       marginBottom: 5,
                     }}
                   >
@@ -549,6 +767,7 @@ export default function PlaybookScreen() {
                         paddingHorizontal: 8,
                         paddingVertical: 4,
                         marginRight: 7,
+                        marginTop: 1,
                       }}
                     >
                       <Text
@@ -563,10 +782,13 @@ export default function PlaybookScreen() {
                     </View>
 
                     <Text
+                      numberOfLines={3}
                       style={{
                         color: theme.text,
                         fontSize: 14,
                         fontWeight: "800",
+                        flex: 1,
+                        minWidth: 0,
                       }}
                     >
                       {rule.title}
@@ -575,6 +797,7 @@ export default function PlaybookScreen() {
 
                   {rule.description ? (
                     <Text
+                      numberOfLines={4}
                       style={{
                         color: theme.textSecondary,
                         fontSize: 12,
@@ -586,7 +809,18 @@ export default function PlaybookScreen() {
                   ) : null}
                 </View>
 
-                <Pressable onPress={() => removeRule(rule.id)} hitSlop={8}>
+                <Pressable
+                  onPress={() => removeRule(rule.id)}
+                  hitSlop={8}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    minWidth: 40,
+                    minHeight: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <Ionicons
                     name="trash-outline"
                     size={17}

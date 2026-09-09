@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -51,19 +52,58 @@ function isToday(date: Date) {
 function StatCard({
   label,
   value,
+  icon,
   theme,
+  accent = "primary",
 }: {
   label: string;
   value: string;
+  icon: keyof typeof Ionicons.glyphMap;
   theme: typeof Colors.light;
+  accent?: "primary" | "positive";
 }) {
-  return (
-    <View style={{ ...styles.statCard, backgroundColor: theme.card }}>
-      <Text style={{ ...styles.statLabel, color: theme.textSecondary }}>
-        {label}
-      </Text>
+  const accentColor = accent === "positive" ? theme.positive : theme.primary;
 
-      <Text style={{ ...styles.statValue, color: theme.text }}>
+  const accentBackground =
+    accent === "positive" ? theme.positiveLight : theme.primaryLight;
+
+  return (
+    <View
+      style={{
+        ...styles.statCard,
+        backgroundColor: theme.card,
+        borderColor: theme.border,
+      }}
+    >
+      <View style={styles.statHeader}>
+        <View
+          style={{
+            ...styles.statIconBox,
+            backgroundColor: accentBackground,
+          }}
+        >
+          <Ionicons name={icon} size={17} color={accentColor} />
+        </View>
+
+        <Text
+          numberOfLines={1}
+          style={{
+            ...styles.statLabel,
+            color: theme.textSecondary,
+          }}
+        >
+          {label}
+        </Text>
+      </View>
+
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={{
+          ...styles.statValue,
+          color: theme.text,
+        }}
+      >
         {value}
       </Text>
     </View>
@@ -83,13 +123,27 @@ function SectionHeader({
 }) {
   return (
     <View style={styles.sectionHeader}>
-      <Text style={{ ...styles.sectionTitle, color: theme.text }}>
+      <Text
+        style={{
+          ...styles.sectionTitle,
+          color: theme.text,
+        }}
+      >
         {title}
       </Text>
 
       {action && onPress ? (
-        <TouchableOpacity onPress={onPress}>
-          <Text style={{ ...styles.sectionAction, color: theme.primary }}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onPress}
+          style={styles.sectionActionButton}
+        >
+          <Text
+            style={{
+              ...styles.sectionAction,
+              color: theme.primary,
+            }}
+          >
             {action}
           </Text>
         </TouchableOpacity>
@@ -138,12 +192,19 @@ function TradeRow({
           </Text>
         </View>
 
-        <View>
-          <Text style={{ ...styles.instrument, color: theme.text }}>
+        <View style={styles.tradeInfo}>
+          <Text
+            numberOfLines={1}
+            style={{
+              ...styles.instrument,
+              color: theme.text,
+            }}
+          >
             {trade.instrument}
           </Text>
 
           <Text
+            numberOfLines={1}
             style={{
               ...styles.tradeMeta,
               color: theme.textSecondary,
@@ -187,12 +248,26 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
 
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
   const stats = useMemo(() => {
     const todayTrades = trades.filter((trade) => isToday(getTradeDate(trade)));
 
     const todayPnl = todayTrades.reduce((sum, trade) => sum + trade.pnl, 0);
 
+    const todayWins = todayTrades.filter((trade) => trade.pnl > 0).length;
+
+    const todayLosses = todayTrades.filter((trade) => trade.pnl < 0).length;
+
+    const todayWinRate =
+      todayTrades.length > 0 ? (todayWins / todayTrades.length) * 100 : 0;
+
     const winningTrades = trades.filter((trade) => trade.pnl > 0);
+
     const losingTrades = trades.filter((trade) => trade.pnl < 0);
 
     const winRate =
@@ -201,6 +276,9 @@ export default function HomeScreen() {
     return {
       todayPnl,
       todayTrades,
+      todayWins,
+      todayLosses,
+      todayWinRate,
       totalTrades: trades.length,
       winningTrades: winningTrades.length,
       losingTrades: losingTrades.length,
@@ -210,13 +288,22 @@ export default function HomeScreen() {
 
   const recentTrades = trades.slice(0, 5);
 
-  const monthInfo = useMemo(() => {
+  const currentMonth = useMemo(() => {
     const now = new Date();
 
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }, []);
+
+  const isCurrentMonth =
+    selectedMonth.getFullYear() === currentMonth.getFullYear() &&
+    selectedMonth.getMonth() === currentMonth.getMonth();
+
+  const monthInfo = useMemo(() => {
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth();
 
     const firstDay = new Date(year, month, 1);
+
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const startOffset = firstDay.getDay();
@@ -233,16 +320,38 @@ export default function HomeScreen() {
       }
     });
 
+    const monthPnl = Object.values(pnlByDay).reduce((sum, pnl) => sum + pnl, 0);
+
+    const tradingDays = Object.keys(pnlByDay).length;
+
     return {
-      monthName: now.toLocaleDateString("en-US", {
+      monthName: selectedMonth.toLocaleDateString("en-US", {
         month: "long",
         year: "numeric",
       }),
       daysInMonth,
       startOffset,
       pnlByDay,
+      monthPnl,
+      tradingDays,
     };
-  }, [trades]);
+  }, [selectedMonth, trades]);
+
+  function goToPreviousMonth() {
+    setSelectedMonth(
+      (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1),
+    );
+  }
+
+  function goToNextMonth() {
+    if (isCurrentMonth) {
+      return;
+    }
+
+    setSelectedMonth(
+      (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1),
+    );
+  }
 
   if (loading) {
     return (
@@ -252,22 +361,105 @@ export default function HomeScreen() {
           backgroundColor: theme.background,
         }}
       >
-        <Text style={{ ...styles.loadingText, color: theme.textSecondary }}>
-          Loading your journal...
-        </Text>
+        <View
+          style={{
+            ...styles.loadingCard,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+          }}
+        >
+          <View
+            style={{
+              ...styles.loadingIcon,
+              backgroundColor: theme.primaryLight,
+            }}
+          >
+            <ActivityIndicator size="small" color={theme.primary} />
+          </View>
+
+          <Text
+            style={{
+              ...styles.loadingTitle,
+              color: theme.text,
+            }}
+          >
+            Loading TradeBook
+          </Text>
+
+          <Text
+            style={{
+              ...styles.loadingText,
+              color: theme.textSecondary,
+            }}
+          >
+            Preparing your trading journal...
+          </Text>
+        </View>
       </View>
     );
   }
 
+  const todayStatus =
+    stats.todayTrades.length === 0
+      ? "No trades yet"
+      : stats.todayPnl > 0
+        ? "Positive day"
+        : stats.todayPnl < 0
+          ? "Protect the process"
+          : "Break-even day";
+
+  const todayStatusIcon =
+    stats.todayTrades.length === 0
+      ? "remove-circle-outline"
+      : stats.todayPnl > 0
+        ? "trending-up"
+        : stats.todayPnl < 0
+          ? "shield-checkmark-outline"
+          : "remove-circle-outline";
+
+  /*
+   * Today's P&L card state
+   *
+   * We deliberately do NOT use a full green/red card.
+   * TradeBook remains orange-first, while the tone changes subtly
+   * depending on the day's result.
+   *
+   * Dark mode keeps its own deeper tones so the card does not become
+   * excessively bright.
+   */
+  const pnlCardBackground =
+    stats.todayPnl > 0
+      ? colorScheme === "dark"
+        ? "#B95E16"
+        : "#E8751A"
+      : stats.todayPnl < 0
+        ? colorScheme === "dark"
+          ? "#20211F"
+          : "#292724"
+        : theme.primary;
+
+  const pnlAccentBackground =
+    stats.todayPnl > 0
+      ? colorScheme === "dark"
+        ? "rgba(255,255,255,0.14)"
+        : "rgba(255,255,255,0.20)"
+      : stats.todayPnl < 0
+        ? colorScheme === "dark"
+          ? "rgba(255,255,255,0.08)"
+          : "rgba(255,255,255,0.10)"
+        : "rgba(255,255,255,0.14)";
+
   return (
     <ScrollView
-      style={{ backgroundColor: theme.background }}
+      style={{
+        backgroundColor: theme.background,
+      }}
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerContent}>
           <Text
             style={{
               ...styles.eyebrow,
@@ -277,7 +469,12 @@ export default function HomeScreen() {
             TRADEBOOK
           </Text>
 
-          <Text style={{ ...styles.greeting, color: theme.text }}>
+          <Text
+            style={{
+              ...styles.greeting,
+              color: theme.text,
+            }}
+          >
             Good {new Date().getHours() < 12 ? "morning" : "afternoon"} 👋
           </Text>
         </View>
@@ -300,17 +497,60 @@ export default function HomeScreen() {
       <View
         style={{
           ...styles.pnlCard,
-          backgroundColor: theme.primary,
+          backgroundColor: pnlCardBackground,
         }}
       >
-        <Text style={styles.pnlLabel}>TODAY'S P&L</Text>
+        <View style={styles.pnlMain}>
+          <Text style={styles.pnlLabel}>TODAY'S P&L</Text>
 
-        <Text style={styles.pnlValue}>{formatCurrency(stats.todayPnl)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit style={styles.pnlValue}>
+            {formatCurrency(stats.todayPnl)}
+          </Text>
 
-        <Text style={styles.pnlSubtext}>
-          {stats.todayTrades.length}{" "}
-          {stats.todayTrades.length === 1 ? "trade" : "trades"} today
-        </Text>
+          <Text style={styles.pnlSubtext}>
+            {stats.todayTrades.length}{" "}
+            {stats.todayTrades.length === 1 ? "trade" : "trades"} today
+          </Text>
+        </View>
+
+        <View style={styles.pnlDivider} />
+
+        <View style={styles.pnlOverview}>
+          <View style={styles.pnlStatusRow}>
+            <View
+              style={{
+                ...styles.pnlStatusIcon,
+                backgroundColor: pnlAccentBackground,
+              }}
+            >
+              <Ionicons name={todayStatusIcon} size={15} color="#FFFFFF" />
+            </View>
+
+            <Text numberOfLines={1} style={styles.pnlStatusText}>
+              {todayStatus}
+            </Text>
+          </View>
+
+          <View style={styles.pnlMetricRow}>
+            <View style={styles.pnlMetric}>
+              <Text style={styles.pnlMetricLabel}>Win rate</Text>
+
+              <Text style={styles.pnlMetricValue}>
+                {stats.todayTrades.length > 0
+                  ? `${stats.todayWinRate.toFixed(0)}%`
+                  : "—"}
+              </Text>
+            </View>
+
+            <View style={styles.pnlMetric}>
+              <Text style={styles.pnlMetricLabel}>W / L</Text>
+
+              <Text style={styles.pnlMetricValue}>
+                {stats.todayWins} / {stats.todayLosses}
+              </Text>
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Quick Stats */}
@@ -318,24 +558,30 @@ export default function HomeScreen() {
         <StatCard
           label="Win Rate"
           value={`${stats.winRate.toFixed(0)}%`}
+          icon="pie-chart-outline"
           theme={theme}
+          accent="positive"
         />
 
         <StatCard
-          label="Trades"
+          label="Total Trades"
           value={String(stats.totalTrades)}
+          icon="swap-horizontal-outline"
           theme={theme}
         />
 
         <StatCard
-          label="Wins"
+          label="Winning Trades"
           value={String(stats.winningTrades)}
+          icon="trending-up-outline"
           theme={theme}
+          accent="positive"
         />
 
         <StatCard
-          label="Losses"
+          label="Losing Trades"
           value={String(stats.losingTrades)}
+          icon="trending-down-outline"
           theme={theme}
         />
       </View>
@@ -355,14 +601,72 @@ export default function HomeScreen() {
           borderColor: theme.border,
         }}
       >
-        <Text
-          style={{
-            ...styles.calendarMonth,
-            color: theme.text,
-          }}
-        >
-          {monthInfo.monthName}
-        </Text>
+        <View style={styles.calendarHeader}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={goToPreviousMonth}
+            accessibilityRole="button"
+            accessibilityLabel="Previous month"
+            style={{
+              ...styles.calendarNavButton,
+              borderColor: theme.border,
+              backgroundColor: theme.cardSecondary,
+            }}
+          >
+            <Ionicons name="chevron-back" size={18} color={theme.text} />
+          </TouchableOpacity>
+
+          <View style={styles.calendarTitleArea}>
+            <Text
+              style={{
+                ...styles.calendarMonth,
+                color: theme.text,
+              }}
+            >
+              {monthInfo.monthName}
+            </Text>
+
+            {monthInfo.tradingDays > 0 ? (
+              <Text
+                style={{
+                  ...styles.calendarSummary,
+                  color:
+                    monthInfo.monthPnl >= 0
+                      ? theme.positive
+                      : theme.primaryDark,
+                }}
+              >
+                {formatCompactPnl(monthInfo.monthPnl)} · {monthInfo.tradingDays}{" "}
+                {monthInfo.tradingDays === 1 ? "day" : "days"}
+              </Text>
+            ) : (
+              <Text
+                style={{
+                  ...styles.calendarSummary,
+                  color: theme.textMuted,
+                }}
+              >
+                No trades
+              </Text>
+            )}
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={goToNextMonth}
+            disabled={isCurrentMonth}
+            accessibilityRole="button"
+            accessibilityLabel="Next month"
+            style={{
+              ...styles.calendarNavButton,
+              borderColor: theme.border,
+              backgroundColor: theme.cardSecondary,
+              opacity: isCurrentMonth ? 0.35 : 1,
+            }}
+          >
+            <Ionicons name="chevron-forward" size={18} color={theme.text} />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.weekRow}>
           {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
@@ -389,7 +693,9 @@ export default function HomeScreen() {
             length: monthInfo.daysInMonth,
           }).map((_, index) => {
             const day = index + 1;
+
             const pnl = monthInfo.pnlByDay[day] || 0;
+
             const hasTrade = monthInfo.pnlByDay[day] !== undefined;
 
             return (
@@ -447,7 +753,12 @@ export default function HomeScreen() {
         <Text style={styles.insightEmoji}>💡</Text>
 
         <View style={styles.insightContent}>
-          <Text style={{ ...styles.insightTitle, color: theme.text }}>
+          <Text
+            style={{
+              ...styles.insightTitle,
+              color: theme.text,
+            }}
+          >
             {trades.length === 0
               ? "Start your trading journal"
               : stats.todayTrades.length === 0
@@ -494,7 +805,12 @@ export default function HomeScreen() {
         >
           <Text style={styles.emptyEmoji}>📈</Text>
 
-          <Text style={{ ...styles.emptyTitle, color: theme.text }}>
+          <Text
+            style={{
+              ...styles.emptyTitle,
+              color: theme.text,
+            }}
+          >
             No trades yet
           </Text>
 
@@ -549,10 +865,36 @@ const styles = {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    padding: 24,
   } satisfies ViewStyle,
 
+  loadingCard: {
+    width: "100%",
+    maxWidth: 320,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: "center",
+  } satisfies ViewStyle,
+
+  loadingIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  } satisfies ViewStyle,
+
+  loadingTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+  } satisfies TextStyle,
+
   loadingText: {
-    fontSize: 14,
+    fontSize: 13,
+    marginTop: 5,
+    textAlign: "center",
   } satisfies TextStyle,
 
   header: {
@@ -560,6 +902,11 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 22,
+  } satisfies ViewStyle,
+
+  headerContent: {
+    flex: 1,
+    minWidth: 0,
   } satisfies ViewStyle,
 
   eyebrow: {
@@ -583,15 +930,19 @@ const styles = {
     justifyContent: "center",
   } satisfies ViewStyle,
 
-  profileText: {
-    fontSize: 17,
-    fontWeight: "800",
-  } satisfies TextStyle,
-
   pnlCard: {
     borderRadius: 24,
-    padding: 24,
+    padding: 22,
     marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "stretch",
+    minHeight: 154,
+  } satisfies ViewStyle,
+
+  pnlMain: {
+    flex: 1.15,
+    justifyContent: "center",
+    minWidth: 0,
   } satisfies ViewStyle,
 
   pnlLabel: {
@@ -604,7 +955,7 @@ const styles = {
 
   pnlValue: {
     color: "#FFFFFF",
-    fontSize: 36,
+    fontSize: 34,
     fontWeight: "800",
     marginTop: 7,
     letterSpacing: -1,
@@ -617,30 +968,112 @@ const styles = {
     opacity: 0.78,
   } satisfies TextStyle,
 
+  pnlDivider: {
+    width: 1,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.18,
+    marginHorizontal: 18,
+  } satisfies ViewStyle,
+
+  pnlOverview: {
+    flex: 0.85,
+    justifyContent: "center",
+    minWidth: 0,
+  } satisfies ViewStyle,
+
+  pnlStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 0,
+    marginBottom: 18,
+  } satisfies ViewStyle,
+
+  pnlStatusIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  } satisfies ViewStyle,
+
+  pnlStatusText: {
+    flex: 1,
+    minWidth: 0,
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
+  } satisfies TextStyle,
+
+  pnlMetricRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  } satisfies ViewStyle,
+
+  pnlMetric: {
+    flex: 1,
+    minWidth: 0,
+  } satisfies ViewStyle,
+
+  pnlMetricLabel: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "600",
+    opacity: 0.68,
+    marginBottom: 3,
+  } satisfies TextStyle,
+
+  pnlMetricValue: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+  } satisfies TextStyle,
+
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    justifyContent: "space-between",
     marginBottom: 28,
   } satisfies ViewStyle,
 
   statCard: {
-    width: "48%",
-    minHeight: 82,
+    width: "48.2%",
+    minHeight: 112,
     borderRadius: 18,
-    padding: 16,
+    borderWidth: 1,
+    padding: 15,
+    marginBottom: 10,
     justifyContent: "space-between",
   } satisfies ViewStyle,
 
+  statHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 0,
+  } satisfies ViewStyle,
+
+  statIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+    flexShrink: 0,
+  } satisfies ViewStyle,
+
   statLabel: {
-    fontSize: 12,
-    fontWeight: "600",
+    flex: 1,
+    minWidth: 0,
+    fontSize: 11,
+    fontWeight: "700",
   } satisfies TextStyle,
 
   statValue: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginTop: 8,
+    fontSize: 25,
+    fontWeight: "900",
+    letterSpacing: -0.6,
+    marginTop: 12,
   } satisfies TextStyle,
 
   sectionHeader: {
@@ -656,6 +1089,12 @@ const styles = {
     fontWeight: "800",
   } satisfies TextStyle,
 
+  sectionActionButton: {
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  } satisfies ViewStyle,
+
   sectionAction: {
     fontSize: 13,
     fontWeight: "700",
@@ -668,10 +1107,40 @@ const styles = {
     marginBottom: 26,
   } satisfies ViewStyle,
 
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  } satisfies ViewStyle,
+
+  calendarTitleArea: {
+    flex: 1,
+    alignItems: "center",
+    minWidth: 0,
+    paddingHorizontal: 10,
+  } satisfies ViewStyle,
+
+  calendarNavButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  } satisfies ViewStyle,
+
   calendarMonth: {
     fontSize: 15,
     fontWeight: "800",
-    marginBottom: 16,
+    textAlign: "center",
+  } satisfies TextStyle,
+
+  calendarSummary: {
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 3,
+    textAlign: "center",
   } satisfies TextStyle,
 
   weekRow: {
@@ -761,6 +1230,12 @@ const styles = {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 0,
+  } satisfies ViewStyle,
+
+  tradeInfo: {
+    flex: 1,
+    minWidth: 0,
   } satisfies ViewStyle,
 
   directionBadge: {
@@ -789,6 +1264,7 @@ const styles = {
 
   tradeRight: {
     alignItems: "flex-end",
+    marginLeft: 10,
   } satisfies ViewStyle,
 
   tradePnl: {
@@ -824,6 +1300,9 @@ const styles = {
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 12,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   } satisfies ViewStyle,
 
   emptyButtonText: {

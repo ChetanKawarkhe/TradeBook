@@ -7,7 +7,8 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   signingIn: boolean;
-  signIn: () => Promise<void>;
+  driveBackupAvailable: boolean;
+  signIn: () => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -47,10 +48,32 @@ function getGoogleAuth() {
   return require("@/utils/googleAuth");
 }
 
+async function checkGoogleDriveBackup() {
+  if (IS_EXPO_GO) {
+    return false;
+  }
+
+  try {
+    const { findGoogleDriveBackup } = await import("@/utils/googleDrive");
+
+    const backup = await findGoogleDriveBackup();
+
+    return backup !== null;
+  } catch (error) {
+    console.warn("Google Drive backup detection failed:", error);
+
+    return false;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+
   const [loading, setLoading] = useState(true);
+
   const [signingIn, setSigningIn] = useState(false);
+
+  const [driveBackupAvailable, setDriveBackupAvailable] = useState(false);
 
   useEffect(() => {
     checkCurrentUser();
@@ -73,6 +96,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await GoogleSignin.getCurrentUser();
 
       setUser(currentUser);
+
+      if (currentUser) {
+        const hasBackup = await checkGoogleDriveBackup();
+
+        setDriveBackupAvailable(hasBackup);
+      }
     } catch (error) {
       console.error("Failed to check Google account:", error);
     } finally {
@@ -80,25 +109,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function signIn() {
+  async function signIn(): Promise<boolean> {
     try {
       setSigningIn(true);
 
       if (IS_EXPO_GO) {
         setUser(DEV_USER);
-        return;
+        setDriveBackupAvailable(false);
+        return false;
       }
 
       const googleAuth = getGoogleAuth();
 
       if (!googleAuth) {
-        return;
+        return false;
       }
 
       const result = await googleAuth.signInWithGoogle();
 
-      if (result.success) {
-        setUser(result.user);
+      if (!result.success) {
+        return false;
+      }
+
+      setUser(result.user);
+
+      try {
+        await googleAuth.requestGoogleDriveAccess();
+
+        const hasBackup = await checkGoogleDriveBackup();
+
+        setDriveBackupAvailable(hasBackup);
+
+        return hasBackup;
+      } catch (error) {
+        console.error("Google Drive access was not granted:", error);
+
+        setDriveBackupAvailable(false);
+
+        return false;
       }
     } finally {
       setSigningIn(false);
@@ -109,6 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (IS_EXPO_GO) {
         setUser(null);
+        setDriveBackupAvailable(false);
         return;
       }
 
@@ -116,13 +165,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!googleAuth) {
         setUser(null);
+        setDriveBackupAvailable(false);
         return;
       }
 
       await googleAuth.signOutFromGoogle();
+
       setUser(null);
+      setDriveBackupAvailable(false);
     } catch (error) {
       console.error("Failed to sign out:", error);
+
       throw error;
     }
   }
@@ -133,6 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         signingIn,
+        driveBackupAvailable,
         signIn,
         signOut,
       }}

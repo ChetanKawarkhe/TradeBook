@@ -35,7 +35,9 @@ async function getCurrentBackup(): Promise<TradeBookBackup> {
   return {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    trades: tradesData ? JSON.parse(tradesData) : [],
+    trades: tradesData
+      ? JSON.parse(tradesData)
+      : [],
     journalEntries: journalData
       ? JSON.parse(journalData)
       : [],
@@ -48,7 +50,9 @@ async function getCurrentBackup(): Promise<TradeBookBackup> {
 export async function createAutomaticBackup(): Promise<void> {
   try {
     const directoryInfo =
-      await FileSystem.getInfoAsync(BACKUP_DIRECTORY);
+      await FileSystem.getInfoAsync(
+        BACKUP_DIRECTORY,
+      );
 
     if (!directoryInfo.exists) {
       await FileSystem.makeDirectoryAsync(
@@ -65,6 +69,11 @@ export async function createAutomaticBackup(): Promise<void> {
       BACKUP_FILE,
       JSON.stringify(backup, null, 2),
     );
+
+    // Google Drive backup is intentionally fire-and-forget.
+    // The local backup has already succeeded and remains
+    // the source of truth.
+    void backupToGoogleDriveInBackground();
   } catch (error) {
     console.error(
       "Failed to create automatic backup:",
@@ -75,13 +84,31 @@ export async function createAutomaticBackup(): Promise<void> {
   }
 }
 
+async function backupToGoogleDriveInBackground(): Promise<void> {
+  try {
+    const { backupToGoogleDrive } =
+      await import("@/utils/googleDrive");
+
+    await backupToGoogleDrive();
+  } catch (error) {
+    console.warn(
+      "Google Drive backup skipped or failed:",
+      error,
+    );
+  }
+}
+
 export async function restoreAutomaticBackup(): Promise<TradeBookBackup> {
   try {
     const fileInfo =
-      await FileSystem.getInfoAsync(BACKUP_FILE);
+      await FileSystem.getInfoAsync(
+        BACKUP_FILE,
+      );
 
     if (!fileInfo.exists) {
-      throw new Error("No TradeBook backup was found.");
+      throw new Error(
+        "No TradeBook backup was found.",
+      );
     }
 
     const backupText =

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -7,6 +8,8 @@ import {
   Text,
   TextInput,
   View,
+  type TextStyle,
+  type ViewStyle,
 } from "react-native";
 
 import { Colors } from "@/constants/theme";
@@ -149,18 +152,173 @@ export default function TradesScreen() {
         style={{
           flex: 1,
           backgroundColor: theme.background,
-          justifyContent: "center",
-          alignItems: "center",
+          padding: 18,
+          paddingTop: 24,
         }}
       >
-        <Text
+        <View
           style={{
-            color: theme.textSecondary,
-            fontSize: 15,
+            marginBottom: 22,
           }}
         >
-          Loading trades...
-        </Text>
+          <View
+            style={{
+              width: 110,
+              height: 32,
+              borderRadius: 8,
+              backgroundColor: theme.cardSecondary,
+            }}
+          />
+
+          <View
+            style={{
+              width: 190,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: theme.cardSecondary,
+              marginTop: 9,
+            }}
+          />
+        </View>
+
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 14,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <View
+                style={{
+                  width: 90,
+                  height: 12,
+                  borderRadius: 6,
+                  backgroundColor: theme.cardSecondary,
+                }}
+              />
+
+              <View
+                style={{
+                  width: 130,
+                  height: 30,
+                  borderRadius: 8,
+                  backgroundColor: theme.cardSecondary,
+                  marginTop: 8,
+                }}
+              />
+            </View>
+
+            <View
+              style={{
+                width: 115,
+                alignItems: "flex-end",
+              }}
+            >
+              <View
+                style={{
+                  width: 62,
+                  height: 9,
+                  borderRadius: 5,
+                  backgroundColor: theme.cardSecondary,
+                }}
+              />
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: 6,
+                  marginTop: 9,
+                }}
+              >
+                <View
+                  style={{
+                    width: 50,
+                    height: 48,
+                    borderRadius: 12,
+                    backgroundColor: theme.cardSecondary,
+                  }}
+                />
+
+                <View
+                  style={{
+                    width: 50,
+                    height: 48,
+                    borderRadius: 12,
+                    backgroundColor: theme.cardSecondary,
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+
+          <View
+            style={{
+              height: 1,
+              backgroundColor: theme.border,
+              marginTop: 18,
+              marginBottom: 14,
+            }}
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 28,
+            }}
+          >
+            {[1, 2, 3].map((item) => (
+              <View key={item}>
+                <View
+                  style={{
+                    width: 45,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: theme.cardSecondary,
+                  }}
+                />
+
+                <View
+                  style={{
+                    width: 28,
+                    height: 16,
+                    borderRadius: 6,
+                    backgroundColor: theme.cardSecondary,
+                    marginTop: 6,
+                  }}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {[1, 2, 3].map((item) => (
+          <View
+            key={item}
+            style={{
+              height: 130,
+              backgroundColor: theme.card,
+              borderWidth: 1,
+              borderColor: theme.border,
+              borderRadius: 20,
+              marginBottom: 11,
+            }}
+          />
+        ))}
       </View>
     );
   }
@@ -181,15 +339,8 @@ export default function TradesScreen() {
         }}
       >
         {/* Header */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 18,
-          }}
-        >
-          <View>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
             <Text
               style={{
                 color: theme.text,
@@ -212,63 +363,12 @@ export default function TradesScreen() {
             </Text>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              gap: 7,
-            }}
-          >
-            <Pressable
-              onPress={() => exportTradesToExcel(trades)}
-              style={{
-                backgroundColor: theme.card,
-                borderWidth: 1,
-                borderColor: theme.border,
-                paddingHorizontal: 10,
-                paddingVertical: 11,
-                borderRadius: 14,
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 12,
-                  fontWeight: "700",
-                }}
-              >
-                Excel
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => exportTradesToPdf(trades)}
-              style={{
-                backgroundColor: theme.card,
-                borderWidth: 1,
-                borderColor: theme.border,
-                paddingHorizontal: 10,
-                paddingVertical: 11,
-                borderRadius: 14,
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.text,
-                  fontSize: 12,
-                  fontWeight: "700",
-                }}
-              >
-                PDF
-              </Text>
-            </Pressable>
-
+          <View style={styles.headerActions}>
             <Pressable
               onPress={() => router.push("/add")}
               style={{
+                ...styles.addButton,
                 backgroundColor: theme.primary,
-                paddingHorizontal: 13,
-                paddingVertical: 11,
-                borderRadius: 14,
               }}
             >
               <Text
@@ -295,14 +395,9 @@ export default function TradesScreen() {
             marginBottom: 14,
           }}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-            }}
-          >
-            <View>
+          <View style={styles.summaryTop}>
+            {/* P&L + Metrics */}
+            <View style={styles.summaryMain}>
               <Text
                 style={{
                   color: theme.textSecondary,
@@ -325,49 +420,117 @@ export default function TradesScreen() {
               >
                 {formatCurrency(totalPnl)}
               </Text>
+
+              <View style={styles.summaryMetrics}>
+                <SummaryMetric
+                  label="Trades"
+                  value={String(filteredTrades.length)}
+                  theme={theme}
+                />
+
+                <SummaryMetric
+                  label="Wins"
+                  value={String(wins)}
+                  valueColor={theme.positive}
+                  theme={theme}
+                />
+
+                <SummaryMetric
+                  label="Losses"
+                  value={String(losses)}
+                  valueColor={theme.primaryDark}
+                  theme={theme}
+                />
+              </View>
             </View>
 
+            {/* Export Section */}
             <View
               style={{
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor:
-                  totalPnl >= 0 ? theme.positive : theme.primaryDark,
-                marginTop: 5,
+                ...styles.exportSection,
+                borderLeftColor: theme.border,
               }}
-            />
-          </View>
+            >
+              <Text
+                style={{
+                  color: theme.textSecondary,
+                  fontSize: 9,
+                  fontWeight: "800",
+                  letterSpacing: 1.2,
+                  marginBottom: 9,
+                }}
+              >
+                EXPORT TO
+              </Text>
 
-          <View
-            style={{
-              flexDirection: "row",
-              marginTop: 16,
-              paddingTop: 14,
-              borderTopWidth: 1,
-              borderTopColor: theme.border,
-              gap: 28,
-            }}
-          >
-            <SummaryMetric
-              label="Trades"
-              value={String(filteredTrades.length)}
-              theme={theme}
-            />
+              <View style={styles.exportButtons}>
+                <Pressable
+                  onPress={() => exportTradesToExcel(trades)}
+                  style={{
+                    ...styles.exportButton,
+                    backgroundColor: theme.cardSecondary,
+                    borderColor: theme.border,
+                  }}
+                >
+                  <View
+                    style={{
+                      ...styles.exportIcon,
+                      backgroundColor: theme.primaryLight,
+                    }}
+                  >
+                    <Ionicons
+                      name="grid-outline"
+                      size={17}
+                      color={theme.primary}
+                    />
+                  </View>
 
-            <SummaryMetric
-              label="Wins"
-              value={String(wins)}
-              valueColor={theme.positive}
-              theme={theme}
-            />
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontSize: 9,
+                      fontWeight: "800",
+                      marginTop: 5,
+                    }}
+                  >
+                    Excel
+                  </Text>
+                </Pressable>
 
-            <SummaryMetric
-              label="Losses"
-              value={String(losses)}
-              valueColor={theme.primaryDark}
-              theme={theme}
-            />
+                <Pressable
+                  onPress={() => exportTradesToPdf(trades)}
+                  style={{
+                    ...styles.exportButton,
+                    backgroundColor: theme.cardSecondary,
+                    borderColor: theme.border,
+                  }}
+                >
+                  <View
+                    style={{
+                      ...styles.exportIcon,
+                      backgroundColor: theme.primaryLight,
+                    }}
+                  >
+                    <Ionicons
+                      name="document-text-outline"
+                      size={17}
+                      color={theme.primary}
+                    />
+                  </View>
+
+                  <Text
+                    style={{
+                      color: theme.text,
+                      fontSize: 9,
+                      fontWeight: "800",
+                      marginTop: 5,
+                    }}
+                  >
+                    PDF
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -398,21 +561,8 @@ export default function TradesScreen() {
         </View>
 
         {/* Quick filters */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 18,
-            gap: 8,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              flex: 1,
-              gap: 7,
-            }}
-          >
+        <View style={styles.quickFilterRow}>
+          <View style={styles.resultFilters}>
             <FilterChip
               label="All"
               active={resultFilter === "ALL"}
@@ -438,16 +588,10 @@ export default function TradesScreen() {
           <Pressable
             onPress={openFilters}
             style={{
-              borderWidth: 1,
+              ...styles.filterButton,
               borderColor: activeFilterCount > 0 ? theme.primary : theme.border,
               backgroundColor:
                 activeFilterCount > 0 ? theme.primaryLight : theme.card,
-              borderRadius: 12,
-              paddingHorizontal: 12,
-              height: 40,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 5,
             }}
           >
             <Text
@@ -540,6 +684,8 @@ export default function TradesScreen() {
                   paddingHorizontal: 18,
                   paddingVertical: 11,
                   marginTop: 18,
+                  minHeight: 44,
+                  justifyContent: "center",
                 }}
               >
                 <Text
@@ -585,12 +731,7 @@ export default function TradesScreen() {
                     overflow: "hidden",
                   }}
                 >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                    }}
-                  >
-                    {/* Brand accent */}
+                  <View style={{ flexDirection: "row" }}>
                     <View
                       style={{
                         width: 4,
@@ -604,18 +745,12 @@ export default function TradesScreen() {
                         padding: 16,
                       }}
                     >
-                      {/* Main row */}
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                        }}
-                      >
+                      <View style={styles.tradeMainRow}>
                         <View
                           style={{
                             flex: 1,
                             paddingRight: 12,
+                            minWidth: 0,
                           }}
                         >
                           <View
@@ -627,11 +762,13 @@ export default function TradesScreen() {
                             }}
                           >
                             <Text
+                              numberOfLines={1}
                               style={{
                                 color: theme.text,
                                 fontSize: 19,
                                 fontWeight: "800",
                                 letterSpacing: -0.3,
+                                maxWidth: "72%",
                               }}
                             >
                               {trade.instrument}
@@ -681,6 +818,7 @@ export default function TradesScreen() {
                         <View
                           style={{
                             alignItems: "flex-end",
+                            flexShrink: 0,
                           }}
                         >
                           <Text
@@ -716,7 +854,6 @@ export default function TradesScreen() {
                         </View>
                       </View>
 
-                      {/* Trade details */}
                       <View
                         style={{
                           flexDirection: "row",
@@ -760,12 +897,7 @@ export default function TradesScreen() {
                           theme={theme}
                         />
 
-                        <View
-                          style={{
-                            marginLeft: "auto",
-                            justifyContent: "center",
-                          }}
-                        >
+                        <View style={styles.planContainer}>
                           <View
                             style={{
                               backgroundColor: trade.followedPlan
@@ -859,7 +991,10 @@ export default function TradesScreen() {
                 Filters
               </Text>
 
-              <Pressable onPress={() => setFilterOpen(false)}>
+              <Pressable
+                onPress={() => setFilterOpen(false)}
+                style={styles.sheetCloseButton}
+              >
                 <Text
                   style={{
                     color: theme.textSecondary,
@@ -1164,3 +1299,163 @@ function TradeMetric({
     </View>
   );
 }
+
+const styles = {
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  } satisfies ViewStyle,
+
+  loadingCard: {
+    width: "100%",
+    maxWidth: 320,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: "center",
+  } satisfies ViewStyle,
+
+  loadingIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  } satisfies ViewStyle,
+
+  loadingTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+  } satisfies TextStyle,
+
+  loadingText: {
+    fontSize: 13,
+    marginTop: 5,
+    textAlign: "center",
+  } satisfies TextStyle,
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 18,
+  } satisfies ViewStyle,
+
+  headerContent: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 10,
+  } satisfies ViewStyle,
+
+  headerActions: {
+    flexDirection: "row",
+    gap: 7,
+  } satisfies ViewStyle,
+
+  headerButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+  } satisfies ViewStyle,
+
+  addButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 13,
+    borderRadius: 14,
+  } satisfies ViewStyle,
+
+  summaryTop: {
+    flexDirection: "row",
+    alignItems: "stretch",
+  } satisfies ViewStyle,
+
+  summaryMain: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 14,
+  } satisfies ViewStyle,
+
+  summaryMetrics: {
+    flexDirection: "row",
+    gap: 28,
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+  } satisfies ViewStyle,
+
+  exportSection: {
+    width: 126,
+    paddingLeft: 14,
+    borderLeftWidth: 1,
+    justifyContent: "center",
+  } satisfies ViewStyle,
+
+  exportButtons: {
+    flexDirection: "row",
+    gap: 7,
+  } satisfies ViewStyle,
+
+  exportButton: {
+    width: 52,
+    minHeight: 58,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  } satisfies ViewStyle,
+
+  exportIcon: {
+    width: 29,
+    height: 29,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  } satisfies ViewStyle,
+
+  quickFilterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
+    gap: 8,
+  } satisfies ViewStyle,
+
+  resultFilters: {
+    flexDirection: "row",
+    flex: 1,
+    gap: 7,
+  } satisfies ViewStyle,
+
+  filterButton: {
+    minHeight: 40,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+  } satisfies ViewStyle,
+
+  tradeMainRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  } satisfies ViewStyle,
+
+  planContainer: {
+    marginLeft: "auto",
+    justifyContent: "center",
+  } satisfies ViewStyle,
+
+  sheetCloseButton: {
+    minHeight: 40,
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  } satisfies ViewStyle,
+};

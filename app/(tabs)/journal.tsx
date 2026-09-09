@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -14,8 +15,8 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useJournal } from "@/store/JournalProvider";
 import { useTrades } from "@/store/TradeProvider";
-import { getTradeResultType } from "@/utils/tradeResult";
 import type { JournalEntry } from "@/types/journal";
+import { getTradeResultType } from "@/utils/tradeResult";
 
 const MOODS = [
   "Calm",
@@ -96,6 +97,7 @@ function Chip({
     <Pressable
       onPress={onPress}
       style={{
+        minHeight: 40,
         paddingHorizontal: 13,
         paddingVertical: 9,
         borderRadius: 999,
@@ -104,6 +106,7 @@ function Chip({
         borderColor: selected ? theme.primary : theme.border,
         marginRight: 8,
         marginBottom: 8,
+        justifyContent: "center",
       }}
     >
       <Text
@@ -122,11 +125,13 @@ function Chip({
 export default function JournalScreen() {
   const scheme = useColorScheme();
   const theme = Colors[scheme ?? "light"];
+
   const { editId } = useLocalSearchParams<{
     editId?: string;
   }>();
 
   const { entries, addEntry, deleteEntry, updateEntry, loading } = useJournal();
+
   const { trades } = useTrades();
 
   const [editing, setEditing] = useState(false);
@@ -151,61 +156,60 @@ export default function JournalScreen() {
   );
 
   const dailyReview = useMemo(() => {
-  const pnl = todayTrades.reduce((sum, trade) => sum + trade.pnl, 0);
+    const pnl = todayTrades.reduce((sum, trade) => sum + trade.pnl, 0);
 
-  const followedPlan = todayTrades.filter(
-    (trade) => trade.followedPlan,
-  ).length;
+    const followedPlan = todayTrades.filter(
+      (trade) => trade.followedPlan,
+    ).length;
 
-  const goodWins = todayTrades.filter(
-    (trade) => getTradeResultType(trade) === "Good Win",
-  ).length;
+    const goodWins = todayTrades.filter(
+      (trade) => getTradeResultType(trade) === "Good Win",
+    ).length;
 
-  const badWins = todayTrades.filter(
-    (trade) => getTradeResultType(trade) === "Bad Win",
-  ).length;
+    const badWins = todayTrades.filter(
+      (trade) => getTradeResultType(trade) === "Bad Win",
+    ).length;
 
-  const goodLosses = todayTrades.filter(
-    (trade) => getTradeResultType(trade) === "Good Loss",
-  ).length;
+    const goodLosses = todayTrades.filter(
+      (trade) => getTradeResultType(trade) === "Good Loss",
+    ).length;
 
-  const badLosses = todayTrades.filter(
-    (trade) => getTradeResultType(trade) === "Bad Loss",
-  ).length;
+    const badLosses = todayTrades.filter(
+      (trade) => getTradeResultType(trade) === "Bad Loss",
+    ).length;
 
-  const planRate =
-    todayTrades.length > 0
-      ? Math.round((followedPlan / todayTrades.length) * 100)
-      : 0;
+    const planRate =
+      todayTrades.length > 0
+        ? Math.round((followedPlan / todayTrades.length) * 100)
+        : 0;
 
-  let message = "No trades recorded today yet.";
+    let message = "No trades recorded today yet.";
 
-  if (todayTrades.length > 0) {
-    if (badWins > 0) {
-      message =
-        "You made money, but some profitable trades came from breaking the plan.";
-    } else if (badLosses > goodLosses) {
-      message =
-        "Focus on reducing rule violations and protecting your risk.";
-    } else if (planRate >= 80) {
-      message =
-        "Strong process today. Keep protecting the plan regardless of the outcome.";
-    } else {
-      message =
-        "Review your execution and identify one thing to improve tomorrow.";
+    if (todayTrades.length > 0) {
+      if (badWins > 0) {
+        message =
+          "You made money, but some profitable trades came from breaking the plan.";
+      } else if (badLosses > goodLosses) {
+        message = "Focus on reducing rule violations and protecting your risk.";
+      } else if (planRate >= 80) {
+        message =
+          "Strong process today. Keep protecting the plan regardless of the outcome.";
+      } else {
+        message =
+          "Review your execution and identify one thing to improve tomorrow.";
+      }
     }
-  }
 
-  return {
-    pnl,
-    planRate,
-    goodWins,
-    badWins,
-    goodLosses,
-    badLosses,
-    message,
-  };
-}, [todayTrades]);
+    return {
+      pnl,
+      planRate,
+      goodWins,
+      badWins,
+      goodLosses,
+      badLosses,
+      message,
+    };
+  }, [todayTrades]);
 
   function startEditing(entry: JournalEntry) {
     setEditingEntryId(entry.id);
@@ -229,6 +233,7 @@ export default function JournalScreen() {
       };
     }, []),
   );
+
   useEffect(() => {
     if (!editId || loading) {
       return;
@@ -315,6 +320,156 @@ export default function JournalScreen() {
     ]);
   }
 
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: theme.background,
+          padding: 20,
+          paddingTop: 28,
+        }}
+      >
+        <View
+          style={{
+            marginBottom: 22,
+          }}
+        >
+          <View
+            style={{
+              width: 115,
+              height: 32,
+              borderRadius: 8,
+              backgroundColor: theme.cardSecondary,
+            }}
+          />
+
+          <View
+            style={{
+              width: 215,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: theme.cardSecondary,
+              marginTop: 9,
+            }}
+          />
+        </View>
+
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 20,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <View>
+              <View
+                style={{
+                  width: 145,
+                  height: 18,
+                  borderRadius: 7,
+                  backgroundColor: theme.cardSecondary,
+                }}
+              />
+
+              <View
+                style={{
+                  width: 95,
+                  height: 11,
+                  borderRadius: 6,
+                  backgroundColor: theme.cardSecondary,
+                  marginTop: 7,
+                }}
+              />
+            </View>
+
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: theme.cardSecondary,
+              }}
+            />
+          </View>
+
+          <View
+            style={{
+              height: 82,
+              borderRadius: 14,
+              backgroundColor: theme.cardSecondary,
+              marginTop: 16,
+            }}
+          />
+        </View>
+
+        <View
+          style={{
+            backgroundColor: theme.card,
+            borderWidth: 1,
+            borderColor: theme.border,
+            borderRadius: 20,
+            padding: 16,
+          }}
+        >
+          <View
+            style={{
+              width: 130,
+              height: 17,
+              borderRadius: 7,
+              backgroundColor: theme.cardSecondary,
+              marginBottom: 15,
+            }}
+          />
+
+          {[1, 2, 3].map((item) => (
+            <View
+              key={item}
+              style={{
+                height: 48,
+                borderRadius: 12,
+                backgroundColor: theme.cardSecondary,
+                marginBottom: 10,
+              }}
+            />
+          ))}
+        </View>
+
+        <View
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 40,
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size="small" color={theme.primary} />
+
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontSize: 12,
+              marginTop: 9,
+            }}
+          >
+            Loading journal...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -332,7 +487,12 @@ export default function JournalScreen() {
           marginBottom: 22,
         }}
       >
-        <View>
+        <View
+          style={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
           <Text
             style={{
               color: theme.text,
@@ -349,6 +509,7 @@ export default function JournalScreen() {
               fontSize: 13,
               marginTop: 4,
             }}
+            numberOfLines={1}
           >
             Think before you trade. Learn after.
           </Text>
@@ -357,12 +518,15 @@ export default function JournalScreen() {
         <Pressable
           onPress={() => router.push("/playbook")}
           style={{
-            width: 42,
-            height: 42,
-            borderRadius: 21,
+            width: 44,
+            height: 44,
+            minWidth: 44,
+            minHeight: 44,
+            borderRadius: 22,
             backgroundColor: theme.cardSecondary,
             alignItems: "center",
             justifyContent: "center",
+            marginLeft: 12,
           }}
         >
           <Ionicons name="book-outline" size={20} color={theme.text} />
@@ -388,7 +552,12 @@ export default function JournalScreen() {
             marginBottom: 15,
           }}
         >
-          <View>
+          <View
+            style={{
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
             <Text
               style={{
                 color: theme.text,
@@ -418,12 +587,15 @@ export default function JournalScreen() {
             <Pressable
               onPress={startNewEntry}
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 19,
+                width: 44,
+                height: 44,
+                minWidth: 44,
+                minHeight: 44,
+                borderRadius: 22,
                 backgroundColor: theme.primaryLight,
                 alignItems: "center",
                 justifyContent: "center",
+                marginLeft: 12,
               }}
             >
               <Ionicons
@@ -542,6 +714,7 @@ export default function JournalScreen() {
                 }}
                 style={{
                   height: 50,
+                  minHeight: 50,
                   paddingHorizontal: 18,
                   borderRadius: 14,
                   borderWidth: 1,
@@ -567,6 +740,7 @@ export default function JournalScreen() {
                 style={{
                   flex: 1,
                   height: 50,
+                  minHeight: 50,
                   borderRadius: 14,
                   backgroundColor: theme.primary,
                   alignItems: "center",
@@ -590,6 +764,7 @@ export default function JournalScreen() {
             <View
               style={{
                 flexDirection: "row",
+                flexWrap: "wrap",
                 gap: 8,
                 marginBottom: 14,
               }}
@@ -657,6 +832,7 @@ export default function JournalScreen() {
             >
               {todayEntry.plan || "—"}
             </Text>
+
             {todayTrades.length > 0 ? (
               <View
                 style={{
@@ -691,8 +867,10 @@ export default function JournalScreen() {
                 <Pressable
                   onPress={() => router.push("/trades")}
                   style={{
-                    marginTop: 8,
+                    minHeight: 40,
                     alignSelf: "flex-start",
+                    justifyContent: "center",
+                    marginTop: 5,
                   }}
                 >
                   <Text
@@ -707,6 +885,7 @@ export default function JournalScreen() {
                 </Pressable>
               </View>
             ) : null}
+
             {todayEntry.lesson ? (
               <View
                 style={{
@@ -742,8 +921,10 @@ export default function JournalScreen() {
             <Pressable
               onPress={startNewEntry}
               style={{
-                marginTop: 15,
+                minHeight: 44,
                 alignSelf: "flex-start",
+                justifyContent: "center",
+                marginTop: 9,
               }}
             >
               <Text
@@ -768,6 +949,7 @@ export default function JournalScreen() {
               borderStyle: "dashed",
               alignItems: "center",
               justifyContent: "center",
+              paddingHorizontal: 12,
             }}
           >
             <Ionicons name="journal-outline" size={28} color={theme.primary} />
@@ -778,6 +960,7 @@ export default function JournalScreen() {
                 fontSize: 14,
                 fontWeight: "700",
                 marginTop: 8,
+                textAlign: "center",
               }}
             >
               Start today's journal
@@ -788,6 +971,7 @@ export default function JournalScreen() {
                 color: theme.textSecondary,
                 fontSize: 11,
                 marginTop: 3,
+                textAlign: "center",
               }}
             >
               Set your plan before the market moves.
@@ -824,7 +1008,7 @@ export default function JournalScreen() {
                 dailyReview.pnl > 0
                   ? theme.positive
                   : dailyReview.pnl < 0
-                    ? theme.negative
+                    ? theme.primaryDark
                     : theme.text,
               fontSize: 28,
               fontWeight: "900",
@@ -937,7 +1121,7 @@ export default function JournalScreen() {
 
               <Text
                 style={{
-                  color: theme.negative,
+                  color: theme.primaryDark,
                   fontSize: 19,
                   fontWeight: "800",
                   marginTop: 4,
@@ -1011,7 +1195,6 @@ export default function JournalScreen() {
         </View>
       ) : null}
 
-
       {/* Journal history */}
       <View
         style={{
@@ -1038,6 +1221,7 @@ export default function JournalScreen() {
             style={{
               color: theme.textSecondary,
               fontSize: 12,
+              lineHeight: 18,
             }}
           >
             Your previous journal entries will appear here.
@@ -1053,9 +1237,11 @@ export default function JournalScreen() {
                 })
               }
               style={{
+                minHeight: 64,
                 paddingVertical: 13,
                 borderBottomWidth: 1,
                 borderBottomColor: theme.border,
+                justifyContent: "center",
               }}
             >
               <View
@@ -1070,7 +1256,9 @@ export default function JournalScreen() {
                     color: theme.text,
                     fontSize: 13,
                     fontWeight: "800",
+                    flexShrink: 1,
                   }}
+                  numberOfLines={1}
                 >
                   {new Date(`${entry.date}T12:00:00`).toLocaleDateString(
                     "en-IN",
@@ -1087,20 +1275,43 @@ export default function JournalScreen() {
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 14,
+                    marginLeft: 12,
                   }}
                 >
-                  <Pressable onPress={() => startEditing(entry)} hitSlop={8}>
+                  <Pressable
+                    onPress={() => startEditing(entry)}
+                    hitSlop={8}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      minWidth: 36,
+                      minHeight: 36,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Ionicons
                       name="create-outline"
-                      size={16}
+                      size={17}
                       color={theme.primary}
                     />
                   </Pressable>
 
-                  <Pressable onPress={() => removeEntry(entry.id)} hitSlop={8}>
+                  <Pressable
+                    onPress={() => removeEntry(entry.id)}
+                    hitSlop={8}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      minWidth: 36,
+                      minHeight: 36,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Ionicons
                       name="trash-outline"
-                      size={16}
+                      size={17}
                       color={theme.textSecondary}
                     />
                   </Pressable>
@@ -1114,7 +1325,8 @@ export default function JournalScreen() {
                     color: theme.textSecondary,
                     fontSize: 12,
                     lineHeight: 18,
-                    marginTop: 5,
+                    marginTop: 2,
+                    paddingRight: 8,
                   }}
                 >
                   {entry.lesson}

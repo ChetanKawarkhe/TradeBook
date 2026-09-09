@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -244,6 +244,19 @@ function RatingSelector({
 
 export default function AddTradeScreen() {
   const scheme = useColorScheme();
+
+    const scrollViewRef = useRef<ScrollView>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollTo({
+          y: 0,
+          animated: false,
+        });
+      });
+    }, []),
+  );
   const theme = Colors[scheme ?? "light"];
   const { addTrade } = useTrades();
 
@@ -425,6 +438,7 @@ export default function AddTradeScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
+      ref={scrollViewRef}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -616,7 +630,7 @@ export default function AddTradeScreen() {
 
             <Text
               style={{
-                color: livePnl >= 0 ? theme.positive : theme.negative,
+                color: livePnl >= 0 ? theme.positive : theme.primaryDark,
                 fontSize: 24,
                 fontWeight: "800",
                 marginTop: 3,

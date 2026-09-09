@@ -7,6 +7,9 @@ import {
 const WEB_CLIENT_ID =
   process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
+export const GOOGLE_DRIVE_SCOPE =
+  "https://www.googleapis.com/auth/drive.file";
+
 if (!WEB_CLIENT_ID) {
   throw new Error(
     "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not configured.",
@@ -64,6 +67,41 @@ export async function signInWithGoogle(): Promise<{
 
     throw error;
   }
+}
+
+export async function requestGoogleDriveAccess(): Promise<{
+  accessToken: string;
+  grantedScopes: string[];
+} | null> {
+  try {
+    const response = await GoogleSignin.addScopes({
+      scopes: [GOOGLE_DRIVE_SCOPE],
+    });
+
+    if (!response?.data) {
+      return null;
+    }
+
+    const tokens = await GoogleSignin.getTokens();
+
+    return {
+      accessToken: tokens.accessToken,
+      grantedScopes: response.data.scopes ?? [],
+    };
+  } catch (error) {
+    console.error(
+      "Google Drive authorization failed:",
+      error,
+    );
+
+    throw error;
+  }
+}
+
+export async function getGoogleAccessToken(): Promise<string> {
+  const tokens = await GoogleSignin.getTokens();
+
+  return tokens.accessToken;
 }
 
 export async function signOutFromGoogle() {
